@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, Brain, TrendingUp, Award, Target, ArrowRight } from 'lucide-react';
 import { useUser } from '../context/UserContext';
-import { questionBank } from '../data/questions';
+import { questionBank } from '../questions';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import DetailedSolutions from '../components/DetailedSolutions';
 import './MockTest.css';
 
 const MockTest = () => {
     const { user, updateTestResults } = useUser();
-    const [testState, setTestState] = useState('setup'); // setup, testing, results
+    const [testState, setTestState] = useState('setup'); // setup, testing, results, solutions
     const [selectedSubject, setSelectedSubject] = useState('');
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState({});
@@ -82,6 +83,8 @@ const MockTest = () => {
             status: answers[q.id] === undefined ? 'skipped' : (answers[q.id] === q.correct ? 'correct' : 'incorrect'),
             topic: q.topic,
             difficulty: q.difficulty,
+            theory: q.theory,
+            explanation: q.explanation,
             timeSpent: Math.floor(Math.random() * 180) + 60
         }));
 
@@ -458,11 +461,22 @@ const MockTest = () => {
                     }}>
                         Take Another Test
                     </button>
-                    <button className="btn-primary">
+                    <button className="btn-primary" onClick={() => setTestState('solutions')}>
                         View Detailed Solutions
                     </button>
                 </div>
             </div>
+        );
+    }
+
+    // Detailed Solutions Screen
+    if (testState === 'solutions' && testResults) {
+        return (
+            <DetailedSolutions
+                testResults={testResults}
+                selectedSubject={selectedSubject}
+                onBack={() => setTestState('results')}
+            />
         );
     }
 
