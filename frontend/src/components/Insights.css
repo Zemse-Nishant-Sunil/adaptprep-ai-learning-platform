@@ -29,7 +29,7 @@
 }
 
 .header-icon {
-    color: white;
+    color: #e30606;
 }
 
 .insights-header h1 {
@@ -40,7 +40,7 @@
     letter-spacing: -0.04em;
     /* background: var(--gradient-vibrant); */
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    /* -webkit-text-fill-color: transparent; */
     background-clip: text;
 
 }
@@ -97,6 +97,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
+    color: black;
 }
 
 .stat-box::before {
@@ -145,7 +146,7 @@
 }
 
 .stat-label {
-    color: #262930;
+    color: #0a0e14;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -163,7 +164,7 @@
 
 .stat-change {
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: #191b1f;
     display: block;
 }
 

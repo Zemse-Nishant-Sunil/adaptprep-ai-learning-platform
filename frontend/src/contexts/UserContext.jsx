@@ -111,19 +111,19 @@ export const UserProvider = ({ children }) => {
     };
 
     // Sign up
-    const signUp = async (email, password) => {
+    const signUp = async (email, password, examType = 'jee') => {
         try {
             const response = await apiRequest('/auth/signup', {
                 method: 'POST',
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password, examType })
             });
 
             setToken(response.token);
 
-            // Set user with default examType if not provided
+            // Set user with default values if not provided
             const userWithDefaults = {
                 ...response.user,
-                examType: response.user.examType || 'jee',
+                examType: response.user.examType || examType,
                 name: response.user.name || response.user.email?.split('@')[0] || 'Student',
                 avatar: response.user.avatar || response.user.email?.substring(0, 2).toUpperCase() || 'ST'
             };

@@ -4,8 +4,8 @@ import { useUser } from '../contexts/UserContext';
 import './Insights.css';
 
 const Insights = () => {
-    const { userData, loading } = useUser();
-    const [selectedExam, setSelectedExam] = useState('JEE');
+    const { user, userData, loading } = useUser();
+    const [selectedExam, setSelectedExam] = useState(user.examType);
 
     if (loading) {
         return (
@@ -159,17 +159,17 @@ const Insights = () => {
 
             <div className="exam-selector animate-slide-up">
                 <button
-                    className={`exam-btn ${selectedExam === 'JEE' ? 'active' : ''}`}
+                    className={`exam-btn active}`}
                     onClick={() => setSelectedExam('JEE')}
                 >
-                    JEE
+                    {selectedExam}
                 </button>
-                <button
+                {/* <button
                     className={`exam-btn ${selectedExam === 'NEET' ? 'active' : ''}`}
                     onClick={() => setSelectedExam('NEET')}
                 >
                     NEET
-                </button>
+                </button> */}
             </div>
 
             <div className="quick-stats animate-slide-up">

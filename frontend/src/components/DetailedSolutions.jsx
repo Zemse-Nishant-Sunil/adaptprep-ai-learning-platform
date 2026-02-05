@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle, XCircle, Circle, BookOpen } from 'lucide-react';
-import '../styles/DetailedSolutions.css';
+import './DetailedSolutions.css';
 
 const DetailedSolutions = ({ testResults, selectedSubject, onBack }) => {
     const [expandedQuestion, setExpandedQuestion] = useState(null);
     const [filterType, setFilterType] = useState('all'); // all, incorrect, skipped
 
-    const filteredQuestions = testResults.questions.filter((q) => {
+    // Handle both old and new data structures
+    const questions = testResults.questions || testResults.detailedResults || [];
+
+    const filteredQuestions = questions.filter((q) => {
         if (filterType === 'all') return true;
         if (filterType === 'incorrect') return q.status === 'incorrect' || q.status === 'skipped';
         return false;
@@ -53,7 +56,7 @@ const DetailedSolutions = ({ testResults, selectedSubject, onBack }) => {
                     <BookOpen size={28} className="animate-float" />
                     <div>
                         <h2>Detailed Solutions</h2>
-                        <p>{selectedSubject.charAt(0).toUpperCase() + selectedSubject.slice(1)} - {testResults.total} Questions</p>
+                        <p>{selectedSubject.charAt(0).toUpperCase() + selectedSubject.slice(1)} - {testResults.total || testResults.totalQuestions} Questions</p>
                     </div>
                 </div>
             </div>
@@ -63,20 +66,20 @@ const DetailedSolutions = ({ testResults, selectedSubject, onBack }) => {
                     className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
                     onClick={() => setFilterType('all')}
                 >
-                    All Questions ({testResults.total})
+                    All Questions ({testResults.total || testResults.totalQuestions})
                 </button>
                 <button
                     className={`filter-btn ${filterType === 'incorrect' ? 'active' : ''}`}
                     onClick={() => setFilterType('incorrect')}
                 >
-                    Incorrect & Skipped ({testResults.incorrect + testResults.skipped})
+                    Incorrect & Skipped ({(testResults.incorrect || 0) + (testResults.skipped || 0)})
                 </button>
             </div>
 
             <div className="solutions-list">
                 {filteredQuestions.map((question, idx) => (
                     <div
-                        key={question.id}
+                        key={question.id || idx}
                         className={`solution-card ${question.status} ${expandedQuestion === idx ? 'expanded' : ''
                             }`}
                     >
@@ -89,10 +92,14 @@ const DetailedSolutions = ({ testResults, selectedSubject, onBack }) => {
                                 <div className="question-title">
                                     <p className="question-text">{question.question}</p>
                                     <div className="question-meta">
-                                        <span className={`difficulty-badge ${question.difficulty}`}>
-                                            {question.difficulty}
-                                        </span>
-                                        <span className="topic-badge">{question.topic}</span>
+                                        {question.difficulty && (
+                                            <span className={`difficulty-badge ${question.difficulty}`}>
+                                                {question.difficulty}
+                                            </span>
+                                        )}
+                                        {question.topic && (
+                                            <span className="topic-badge">{question.topic}</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -114,7 +121,7 @@ const DetailedSolutions = ({ testResults, selectedSubject, onBack }) => {
                                 <div className="section options-section">
                                     <h4>Options:</h4>
                                     <div className="options-grid">
-                                        {question.options.map((option, optIdx) => (
+                                        {question.options && question.options.map((option, optIdx) => (
                                             <div
                                                 key={optIdx}
                                                 className={`option-display ${optIdx === question.correct ? 'correct-option' : ''
@@ -191,17 +198,21 @@ const DetailedSolutions = ({ testResults, selectedSubject, onBack }) => {
                                 {/* Additional Info */}
                                 <div className="section info-section">
                                     <div className="info-grid">
-                                        <div className="info-item">
-                                            <span className="info-label">Topic:</span>
-                                            <span className="info-value">{question.topic}</span>
-                                        </div>
-                                        <div className="info-item">
-                                            <span className="info-label">Difficulty:</span>
-                                            <span className={`info-value ${question.difficulty}`}>
-                                                {question.difficulty.charAt(0).toUpperCase() +
-                                                    question.difficulty.slice(1)}
-                                            </span>
-                                        </div>
+                                        {question.topic && (
+                                            <div className="info-item">
+                                                <span className="info-label">Topic:</span>
+                                                <span className="info-value">{question.topic}</span>
+                                            </div>
+                                        )}
+                                        {question.difficulty && (
+                                            <div className="info-item">
+                                                <span className="info-label">Difficulty:</span>
+                                                <span className={`info-value ${question.difficulty}`}>
+                                                    {question.difficulty.charAt(0).toUpperCase() +
+                                                        question.difficulty.slice(1)}
+                                                </span>
+                                            </div>
+                                        )}
                                         <div className="info-item">
                                             <span className="info-label">Status:</span>
                                             <span className={`info-value ${getStatusColor(question.status)}`}>

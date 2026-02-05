@@ -112,7 +112,7 @@
 }
 
 .stat-label {
-    color: var(--text-secondary);
+    color: black;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;

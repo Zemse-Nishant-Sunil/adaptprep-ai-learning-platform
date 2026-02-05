@@ -9,7 +9,8 @@ const SignUp = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        examType: 'jee'
     });
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +64,7 @@ const SignUp = () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        const result = await signUp(formData.email, formData.password);
+        const result = await signUp(formData.email, formData.password, formData.examType);
 
         if (result.success) {
             navigate('/dashboard');
@@ -138,6 +139,37 @@ const SignUp = () => {
                                 disabled={isLoading}
                             />
                         </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Competitive Exam</label>
+                        <div className="exam-type-selector">
+                            <label className={`exam-option ${formData.examType === 'jee' ? 'selected' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="examType"
+                                    value="jee"
+                                    checked={formData.examType === 'jee'}
+                                    onChange={handleChange}
+                                    disabled={isLoading}
+                                />
+                                <span>JEE (Engineering)</span>
+                            </label>
+                            <label className={`exam-option ${formData.examType === 'neet' ? 'selected' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="examType"
+                                    value="neet"
+                                    checked={formData.examType === 'neet'}
+                                    onChange={handleChange}
+                                    disabled={isLoading}
+                                />
+                                <span>NEET (Medical)</span>
+                            </label>
+                        </div>
+                        <small className="form-hint">
+                            Choose your competitive exam pathway
+                        </small>
                     </div>
 
                     <button type="submit" className="signup-btn">

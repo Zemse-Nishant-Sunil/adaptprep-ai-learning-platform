@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Clock, CheckCircle, XCircle, Brain, TrendingUp, Award, Target, ArrowRight } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import DetailedSolutions from './DetailedSolutions';
 import './MockTest.css';
 
 const TEST_DURATION = 600; // 10 minutes in seconds
 
 const MockTest = () => {
     // State variables
-    const [selectedExam, setSelectedExam] = useState('JEE');
     const [selectedSubject, setSelectedSubject] = useState('Physics');
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -17,11 +17,15 @@ const MockTest = () => {
     const [startTime, setStartTime] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(TEST_DURATION);
     const [showResults, setShowResults] = useState(false);
+    const [showDetailedSolutions, setShowDetailedSolutions] = useState(false);
     const [results, setResults] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const timer = useRef(null);
     const { getQuestions, saveTestResult, user } = useUser();
+
+    // Use user's exam type
+    const selectedExam = user?.examType?.toUpperCase() || 'JEE';
 
     // Timer effect
     useEffect(() => {
@@ -39,10 +43,9 @@ const MockTest = () => {
         setUserAnswers(newAnswers);
     };
 
-    const nextQuestion = () => {
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-        }
+    const getCorrectAnswerIndex = (question) => {
+        // Handle both 'correct' and 'correctAnswer' field names
+        return question.correct !== undefined ? question.correct : question.correctAnswer;
     };
 
     const startTest = async () => {
@@ -52,13 +55,21 @@ const MockTest = () => {
             const result = await getQuestions(selectedExam, selectedSubject, 10);
 
             if (result.success) {
-                setQuestions(result.questions);
+                const normalizedQuestions = result.questions.map(q => ({
+                    ...q,
+                    // Normalize the correct answer field
+                    correct: q.correct !== undefined ? q.correct : q.correctAnswer,
+                    correctAnswer: q.correct !== undefined ? q.correct : q.correctAnswer
+                }));
+
+                setQuestions(normalizedQuestions);
                 setCurrentQuestionIndex(0);
-                setUserAnswers(new Array(result.questions.length).fill(null));
+                setUserAnswers(new Array(normalizedQuestions.length).fill(null));
                 setTestStarted(true);
                 setStartTime(Date.now());
                 setTimeRemaining(TEST_DURATION);
                 setShowResults(false);
+                setShowDetailedSolutions(false);
             } else {
                 alert('Failed to load questions: ' + result.error);
             }
@@ -73,20 +84,33 @@ const MockTest = () => {
         clearInterval(timer.current);
         setTestStarted(false);
 
-        // Calculate results
+        // Calculate results with correct answer verification
         let correctAnswers = 0;
         const detailedResults = questions.map((question, index) => {
-            const isCorrect = userAnswers[index] === question.correctAnswer;
+            const correctAnswerIndex = getCorrectAnswerIndex(question);
+            const userAnswerIndex = userAnswers[index];
+            const isCorrect = userAnswerIndex === correctAnswerIndex;
+
             if (isCorrect) correctAnswers++;
 
             return {
+                id: question.id,
                 question: question.question,
-                userAnswer: question.options[userAnswers[index]] || 'Not answered',
-                correctAnswer: question.options[question.correctAnswer],
-                isCorrect,
-                explanation: question.explanation
+                options: question.options,
+                userAnswer: userAnswerIndex,
+                correct: correctAnswerIndex,
+                isCorrect: isCorrect,
+                status: userAnswerIndex === null ? 'skipped' : isCorrect ? 'correct' : 'incorrect',
+                explanation: question.explanation,
+                theory: question.theory,
+                topic: question.topic,
+                difficulty: question.difficulty
             };
         });
+
+        // Calculate stats
+        const timeTaken = Math.round((Date.now() - startTime) / 1000);
+        const accuracy = Math.round((correctAnswers / questions.length) * 100);
 
         // Save result to backend
         const testResult = {
@@ -94,7 +118,7 @@ const MockTest = () => {
             subject: selectedSubject,
             score: correctAnswers,
             totalQuestions: questions.length,
-            timeTaken: Math.round((Date.now() - startTime) / 1000)
+            timeTaken: timeTaken
         };
 
         await saveTestResult(testResult);
@@ -102,10 +126,14 @@ const MockTest = () => {
         setResults({
             score: correctAnswers,
             totalQuestions: questions.length,
-            percentage: Math.round((correctAnswers / questions.length) * 100),
-            timeTaken: Math.round((Date.now() - startTime) / 1000),
-            detailedResults,
-            accuracy: Math.round((correctAnswers / questions.length) * 100)
+            percentage: accuracy,
+            timeTaken: timeTaken,
+            accuracy: accuracy,
+            detailedResults: detailedResults,
+            questions: detailedResults,
+            total: questions.length,
+            incorrect: detailedResults.filter(q => q.status === 'incorrect').length,
+            skipped: detailedResults.filter(q => q.status === 'skipped').length
         });
 
         setShowResults(true);
@@ -149,6 +177,17 @@ const MockTest = () => {
 
         return insights;
     };
+
+    // Show Detailed Solutions
+    if (showDetailedSolutions && results) {
+        return (
+            <DetailedSolutions
+                testResults={results}
+                selectedSubject={selectedSubject}
+                onBack={() => setShowDetailedSolutions(false)}
+            />
+        );
+    }
 
     // Setup Screen
     if (!testStarted && !showResults) {
@@ -355,6 +394,12 @@ const MockTest = () => {
                 </div>
 
                 <div className="results-actions">
+                    <button
+                        className="btn-primary"
+                        onClick={() => setShowDetailedSolutions(true)}
+                    >
+                        View Detailed Solutions
+                    </button>
                     <button className="btn-secondary" onClick={() => {
                         setTestStarted(false);
                         setShowResults(false);

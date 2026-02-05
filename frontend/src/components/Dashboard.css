@@ -70,7 +70,7 @@
     letter-spacing: -0.03em;
     background: var(--gradient-cyber);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    /* -webkit-text-fill-color: transparent; */
     background-clip: text;
 }
 
@@ -239,6 +239,7 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-md);
+    gap: 20px;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     border-left: 4px solid var(--primary);
@@ -251,6 +252,7 @@
 
 .test-info {
     display: flex;
+    /* gap: 20px; */
     flex-direction: column;
     gap: var(--spacing-xs);
     flex: 1;

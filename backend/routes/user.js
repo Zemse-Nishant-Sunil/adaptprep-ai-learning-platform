@@ -15,7 +15,8 @@ router.get('/profile', auth, async (req, res) => {
         res.json({
             user: {
                 id: req.user._id,
-                email: req.user.email
+                email: req.user.email,
+                examType: req.user.examType
             },
             userData
         });

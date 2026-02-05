@@ -58,10 +58,12 @@ const questionBank = {
                 id: 1,
                 question: "What is the IUPAC name of CH₃CH₂CH₂OH?",
                 options: ["Propanol", "1-Propanol", "Propan-1-ol", "Both b and c"],
-                correctAnswer: 3,
-                explanation: "The IUPAC name is propan-1-ol or 1-propanol."
-            },
-            // Add more chemistry questions...
+                correct: 3,
+                topic: "Organic Chemistry",
+                difficulty: "easy",
+                theory: "IUPAC naming follows specific rules. For alcohols, we use the suffix -ol and number from the end nearest the OH group.",
+                explanation: "The IUPAC name is propan-1-ol or 1-propanol. Both are acceptable."
+            }
         ],
         Mathematics: [
             {
@@ -122,30 +124,36 @@ const questionBank = {
                 id: 1,
                 question: "The unit of electric field is",
                 options: ["N/C", "C/N", "J/C", "C/J"],
-                correctAnswer: 0,
+                correct: 0,
+                topic: "Electrostatics",
+                difficulty: "easy",
+                theory: "Electric field is defined as force per unit charge. E = F/q, so the unit is Newton per Coulomb (N/C).",
                 explanation: "Electric field is force per unit charge, so unit is N/C."
-            },
-            // Add more physics questions...
+            }
         ],
         Chemistry: [
             {
                 id: 1,
                 question: "The pH of pure water at 25°C is",
                 options: ["6", "7", "8", "14"],
-                correctAnswer: 1,
+                correct: 1,
+                topic: "Acid-Base Chemistry",
+                difficulty: "easy",
+                theory: "At 25°C, the ion product of water (Kw) is 10⁻¹⁴. In pure water, [H⁺] = [OH⁻], so pH = 7 (neutral).",
                 explanation: "Pure water has pH = 7 at 25°C, being neutral."
-            },
-            // Add more chemistry questions...
+            }
         ],
         Biology: [
             {
                 id: 1,
                 question: "DNA replication is",
                 options: ["Conservative", "Semi-conservative", "Dispersive", "Random"],
-                correctAnswer: 1,
+                correct: 1,
+                topic: "Molecular Biology",
+                difficulty: "medium",
+                theory: "DNA replication is semi-conservative. Each DNA molecule contains one original (parental) strand and one newly synthesized strand. This was proven by the Meselson-Stahl experiment.",
                 explanation: "DNA replication is semi-conservative, where each new DNA molecule contains one old and one new strand."
-            },
-            // Add more biology questions...
+            }
         ]
     }
 };

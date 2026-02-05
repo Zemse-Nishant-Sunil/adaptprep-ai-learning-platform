@@ -377,6 +377,58 @@
     from {
         opacity: 0;
         transform: scale(0.95);
+
+        /* Exam Type Selector */
+        .exam-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-xs);
+        }
+
+        .exam-option {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--background);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .exam-option input[type="radio"] {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            margin: 0;
+            accent-color: var(--primary);
+        }
+
+        .exam-option span {
+            font-size: var(--text-sm);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .exam-option:hover:not(:has(input:disabled)) {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .exam-option.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .exam-option input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
     }
 
     to {
@@ -396,7 +448,7 @@
         font-size: var(--text-xl);
     }
 
-    .exam-options {
+    .exam-type-selector {
         grid-template-columns: 1fr;
     }
 

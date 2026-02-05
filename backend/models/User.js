@@ -13,6 +13,12 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 6
     },
+    examType: {
+        type: String,
+        enum: ['jee', 'neet'],
+        required: true,
+        default: 'jee'
+    },
     createdAt: {
         type: Date,
         default: Date.now
