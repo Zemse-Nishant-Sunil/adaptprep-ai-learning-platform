@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Award, Target, TrendingUp, Brain } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import StreakBoard from './StreakBoard';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -50,30 +51,51 @@ const Dashboard = () => {
                 accuracy: 0,
                 currentScore: 0,
                 previousScore: 0,
+                currentRawScore: 0,
+                previousRawScore: 0,
                 rank: 0
             };
         }
 
-        const totalQuestions = testResults.reduce((sum, test) => sum + (test.totalQuestions || 0), 0);
-        const totalCorrect = testResults.reduce((sum, test) => sum + (test.score || 0), 0);
+        // Filter valid test results with proper data
+        const validResults = testResults.filter(test => test && test.totalQuestions && test.correctAnswers !== undefined);
+        
+        if (validResults.length === 0) {
+            return {
+                totalTests: testResults.length,
+                averageScore: 0,
+                accuracy: 0,
+                currentScore: 0,
+                previousScore: 0,
+                currentRawScore: 0,
+                previousRawScore: 0,
+                rank: 0
+            };
+        }
+
+        const totalQuestions = validResults.reduce((sum, test) => sum + (test.totalQuestions || 0), 0);
+        const totalCorrect = validResults.reduce((sum, test) => sum + (test.correctAnswers || 0), 0);
         const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
 
-        // Get current and previous scores
-        const currentScore = testResults[testResults.length - 1]?.score || 0;
-        const previousScore = testResults.length > 1 ? testResults[testResults.length - 2]?.score || 0 : 0;
+        // Get current and previous scores and raw scores
+        const currentScore = validResults[validResults.length - 1]?.correctAnswers || 0;
+        const currentRawScore = validResults[validResults.length - 1]?.rawScore || 0;
+        const previousScore = validResults.length > 1 ? validResults[validResults.length - 2]?.correctAnswers || 0 : 0;
+        const previousRawScore = validResults.length > 1 ? validResults[validResults.length - 2]?.rawScore || 0 : 0;
 
         return {
-            totalTests: testResults.length,
-            averageScore: accuracy,
-            accuracy: accuracy,
+            totalTests: validResults.length,
+            averageScore: isNaN(accuracy) ? 0 : accuracy,
+            accuracy: isNaN(accuracy) ? 0 : accuracy,
             currentScore: currentScore,
             previousScore: previousScore,
-            rank: 0 // Calculate based on performance if needed
+            currentRawScore: currentRawScore,
+            previousRawScore: previousRawScore,
+            rank: 0
         };
     };
 
     const stats = calculateStats();
-    const scoreDiff = stats.currentScore - stats.previousScore;
 
     return (
         <div className="dashboard">
@@ -86,7 +108,11 @@ const Dashboard = () => {
 
             <div className="student-info animate-slide-up">
                 <div className="avatar">
-                    {user.avatar}
+                    <img 
+                        src={`/assets/avatar/${user.avatar || 'avatar_1.jpg'}`}
+                        alt={user.name}
+                        className="avatar-img"
+                    />
                 </div>
                 <div className="student-details">
                     <h2>{user.name}</h2>
@@ -97,6 +123,11 @@ const Dashboard = () => {
                 </div>
             </div>
 
+            <StreakBoard 
+                currentStreak={safeUserData.currentStreak || 0}
+                maxStreak={safeUserData.maxStreak || 0}
+            />
+
             <div className="dashboard-content">
                 <div className="stats-overview">
                     <div className="stat-card">
@@ -106,13 +137,13 @@ const Dashboard = () => {
                     </div>
                     <div className="stat-card">
                         <h3>Average Score</h3>
-                        <div className="stat-value">{stats.averageScore.toFixed(1)}%</div>
+                        <div className="stat-value">{isNaN(stats.averageScore) ? '0.0' : stats.averageScore.toFixed(1)}%</div>
                         <small>Overall accuracy across all tests</small>
                     </div>
                     <div className="stat-card">
-                        <h3>Latest Score</h3>
-                        <div className="stat-value">{stats.currentScore}</div>
-                        <small>{scoreDiff !== 0 ? `${scoreDiff > 0 ? '+' : ''}${scoreDiff} from last test` : 'Take a test to start'}</small>
+                        <h3>Latest Raw Score</h3>
+                        <div className="stat-value">{stats.currentRawScore}</div>
+                        <small>{stats.currentRawScore - stats.previousRawScore !== 0 ? `${stats.currentRawScore - stats.previousRawScore > 0 ? '+' : ''}${stats.currentRawScore - stats.previousRawScore} from last test` : 'Take a test to start'}</small>
                     </div>
                     <div className="stat-card">
                         <h3>Strong Subjects</h3>
@@ -152,20 +183,27 @@ const Dashboard = () => {
                     <div className="recent-tests">
                         <h3>Recent Tests</h3>
                         <div className="test-list">
-                            {safeUserData.testResults.slice(-3).reverse().map((test, index) => (
-                                <div key={index} className="test-item">
-                                    <div className="test-info">
-                                        <span className="test-subject">{test.examType} - {test.subject}</span>
-                                        <span className="test-score">{test.score}/{test.totalQuestions}</span>
+                            {safeUserData.testResults.slice(-3).reverse().map((test, index) => {
+                                // Ensure test has required fields
+                                const totalQs = test.totalQuestions || 0;
+                                const correct = test.correctAnswers || 0;
+                                const accuracy = totalQs > 0 ? (correct / totalQs) * 100 : 0;
+                                
+                                return (
+                                    <div key={index} className="test-item">
+                                        <div className="test-info">
+                                            <span className="test-subject">{test.examType?.toUpperCase() || 'JEE'} - {test.subject || 'Physics'}</span>
+                                            <span className="test-score">{correct}/{totalQs}</span>
+                                        </div>
+                                        <div className="test-date">
+                                            {test.date ? new Date(test.date).toLocaleDateString() : 'Recently'}
+                                        </div>
+                                        <div className="test-accuracy">
+                                            {isNaN(accuracy) ? '0' : Math.round(accuracy)}%
+                                        </div>
                                     </div>
-                                    <div className="test-date">
-                                        {test.date ? new Date(test.date).toLocaleDateString() : 'Recently'}
-                                    </div>
-                                    <div className="test-accuracy">
-                                        {test.totalQuestions > 0 ? Math.round((test.score / test.totalQuestions) * 100) : 0}%
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 ) : (

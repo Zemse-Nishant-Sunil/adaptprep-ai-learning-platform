@@ -152,6 +152,54 @@
     opacity: 0.8;
 }
 
+.test-selection {
+    margin-bottom: var(--spacing-xl);
+}
+
+.test-selection h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: 1.3rem;
+}
+
+.test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.test-card {
+    background: var(--bg-tertiary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    min-height: 50px;
+}
+
+.test-card:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent);
+}
+
+.test-card.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-glow);
+}
+
+.test-number {
+    font-size: 1rem;
+    font-family: var(--font-display);
+}
+
 .start-test-btn {
     width: 100%;
     padding: var(--spacing-md) var(--spacing-xl);
@@ -469,6 +517,10 @@
 
 .summary-card.success {
     border-color: var(--accent);
+}
+
+.summary-card.error {
+    border-color: #EF4444;
 }
 
 .summary-card.info {

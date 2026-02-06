@@ -27,6 +27,34 @@ const Performance = () => {
     };
 
     // Calculate performance stats from test results
+    const reconstructStatuses = (totalQs, correct, incorrect) => {
+        // NOTE: This is a FALLBACK. Ideal approach is to use stored questionStatuses.
+        // This reconstruction only works well if we know the EXACT ORDER of correct/incorrect/skipped answers.
+        // Since we don't have that order, we ESTIMATE by assuming:
+        // - First 'correct' questions are correct
+        // - Next 'incorrect' questions are incorrect  
+        // - Remaining are skipped
+        // This may NOT match reality - some correct answers might be interspersed with incorrect ones!
+        
+        // IMPORTANT: If this is giving wrong results, the issue is that questionStatuses
+        // is not being stored/retrieved properly from the backend.
+        
+        const skipped = totalQs - correct - incorrect;
+        const result = [];
+        
+        for (let i = 0; i < totalQs; i++) {
+            if (i < correct) {
+                result.push('correct');
+            } else if (i < correct + incorrect) {
+                result.push('incorrect');
+            } else {
+                result.push('skipped');
+            }
+        }
+        
+        return result;
+    };
+
     const calculatePerformanceStats = () => {
         const { testResults } = safeUserData;
 
@@ -36,42 +64,118 @@ const Performance = () => {
                 correct: 0,
                 incorrect: 0,
                 skipped: 0,
+                rawScore: 0,
                 averageTime: 0,
                 subjectStats: {},
                 questionStatus: []
             };
         }
 
+        // Filter results by selected subject if not 'All'
+        const filteredResults = selectedSubject === 'All' 
+            ? testResults 
+            : testResults.filter(test => test.subject === selectedSubject);
+
         let totalQuestions = 0;
         let totalCorrect = 0;
+        let totalIncorrect = 0;
+        let totalSkipped = 0;
+        let totalRawScore = 0;
         let totalTime = 0;
         const subjectStats = {};
         const questionStatus = [];
 
-        testResults.forEach((test, testIndex) => {
+        filteredResults.forEach((test, testIndex) => {
             const testQuestions = test.totalQuestions || 10;
-            const testCorrect = test.score || 0;
-            const testIncorrect = testQuestions - testCorrect;
+            
+            // Handle both old and new test formats
+            // New format: correctAnswers, incorrectAnswers, skipped
+            // Old format: score (needs conversion)
+            let testCorrect, testIncorrect, testSkipped;
+            
+            if (test.correctAnswers !== undefined && test.incorrectAnswers !== undefined && test.skipped !== undefined) {
+                // New format
+                testCorrect = test.correctAnswers || 0;
+                testIncorrect = test.incorrectAnswers || 0;
+                testSkipped = test.skipped || 0;
+                
+                // Validate counts add up
+                const totalFromCounts = testCorrect + testIncorrect + testSkipped;
+                if (totalFromCounts !== testQuestions) {
+                    console.warn(`⚠️ Count mismatch for ${test.subject} test ${test.testNumber}: ${totalFromCounts} != ${testQuestions}`);
+                }
+            } else if (test.score !== undefined) {
+                // Old format - convert score to new format
+                testCorrect = test.score || 0;
+                testIncorrect = testQuestions - testCorrect;
+                testSkipped = 0;
+            } else {
+                // No data available
+                testCorrect = 0;
+                testIncorrect = 0;
+                testSkipped = testQuestions;
+            }
+            
+            const rawScore = test.rawScore || (testCorrect * 4 - testIncorrect * 1);
+            const subject = test.subject || 'Unknown';
 
             totalQuestions += testQuestions;
             totalCorrect += testCorrect;
+            totalIncorrect += testIncorrect;
+            totalSkipped += testSkipped;
+            totalRawScore += rawScore;
             totalTime += test.timeTaken || 0;
 
             // Subject stats
-            const subject = test.subject || 'Unknown';
             if (!subjectStats[subject]) {
-                subjectStats[subject] = { correct: 0, total: 0, tests: 0 };
+                subjectStats[subject] = { correct: 0, incorrect: 0, skipped: 0, total: 0, rawScore: 0, tests: 0 };
             }
             subjectStats[subject].correct += testCorrect;
+            subjectStats[subject].incorrect += testIncorrect;
+            subjectStats[subject].skipped += testSkipped;
             subjectStats[subject].total += testQuestions;
+            subjectStats[subject].rawScore += rawScore;
             subjectStats[subject].tests += 1;
 
-            // Generate question status for visualization
+            // Generate question identifiers with proper naming and actual statuses
+            const subjectPrefix = {
+                'Physics': 'p',
+                'Chemistry': 'c',
+                'Mathematics': 'm',
+                'Biology': 'b'
+            }[subject] || 's';
+
+            // Use actual statuses from questionStatuses array if available
+            let statuses;
+            
+            // Validate questionStatuses: must be array with correct length and valid values
+            if (Array.isArray(test.questionStatuses) && test.questionStatuses.length === testQuestions) {
+                const validStatuses = ['correct', 'incorrect', 'skipped'];
+                if (test.questionStatuses.every(s => validStatuses.includes(s))) {
+                    // Valid questionStatuses found
+                    statuses = test.questionStatuses;
+                    console.log(`✓ Using stored questionStatuses for ${subject} test ${test.testNumber}`);
+                } else {
+                    // Invalid values in array, reconstruct
+                    console.warn(`⚠️ Invalid status values in questionStatuses for ${subject} test ${test.testNumber}`);
+                    statuses = reconstructStatuses(testQuestions, testCorrect, testIncorrect);
+                }
+            } else {
+                // No questionStatuses or wrong length, reconstruct
+                if (!test.questionStatuses) {
+                    console.log(`ℹ️ No questionStatuses found for ${subject} test ${test.testNumber} - using reconstruction`);
+                } else {
+                    console.warn(`⚠️ Incorrect length for ${subject} test ${test.testNumber}: got ${test.questionStatuses?.length || 0}, expected ${testQuestions}`);
+                }
+                statuses = reconstructStatuses(testQuestions, testCorrect, testIncorrect);
+            }
+
             for (let i = 0; i < testQuestions; i++) {
                 questionStatus.push({
-                    questionNumber: totalQuestions - testQuestions + i + 1,
-                    status: i < testCorrect ? 'correct' : 'incorrect',
+                    questionNumber: `${subjectPrefix}${i + 1}`,
+                    status: statuses[i] || 'skipped',
                     subject: subject,
+                    testNumber: test.testNumber || (testIndex + 1),
                     testIndex: testIndex
                 });
             }
@@ -80,9 +184,10 @@ const Performance = () => {
         return {
             totalQuestions,
             correct: totalCorrect,
-            incorrect: totalQuestions - totalCorrect,
-            skipped: 0,
-            averageTime: testResults.length > 0 ? Math.round(totalTime / testResults.length) : 0,
+            incorrect: totalIncorrect,
+            skipped: totalSkipped,
+            rawScore: totalRawScore,
+            averageTime: filteredResults.length > 0 ? Math.round(totalTime / filteredResults.length) : 0,
             subjectStats,
             questionStatus
         };
@@ -108,12 +213,18 @@ const Performance = () => {
     }
 
     // Prepare chart data
-    const subjectChartData = Object.entries(stats.subjectStats).map(([subject, data]) => ({
-        name: subject,
-        accuracy: ((data.correct / data.total) * 100).toFixed(1),
-        correct: data.correct,
-        total: data.total
-    }));
+    const subjectChartData = Object.entries(stats.subjectStats).map(([subject, data]) => {
+        const accuracy = data.total > 0 ? ((data.correct / data.total) * 100).toFixed(1) : 0;
+        return {
+            name: subject,
+            accuracy: parseFloat(accuracy),
+            correct: data.correct,
+            incorrect: data.incorrect,
+            skipped: data.skipped,
+            rawScore: data.rawScore,
+            total: data.total
+        };
+    });
 
     const pieData = [
         { name: 'Correct', value: stats.correct, color: '#10B981' },
@@ -142,16 +253,28 @@ const Performance = () => {
             </div>
 
             <div className="performance-stats animate-slide-up">
+                <div className="stat-card primary-card">
+                    <Target className="stat-icon" size={32} />
+                    <div className="stat-value">{stats.rawScore}</div>
+                    <div className="stat-label">Raw Score</div>
+                </div>
+
                 <div className="stat-card correct-card">
                     <CheckCircle className="stat-icon" size={32} />
                     <div className="stat-value">{stats.correct}</div>
-                    <div className="stat-label">Correct</div>
+                    <div className="stat-label">Correct (+4)</div>
                 </div>
 
                 <div className="stat-card incorrect-card">
                     <XCircle className="stat-icon" size={32} />
                     <div className="stat-value">{stats.incorrect}</div>
-                    <div className="stat-label">Incorrect</div>
+                    <div className="stat-label">Incorrect (-1)</div>
+                </div>
+
+                <div className="stat-card warning-card">
+                    <Target className="stat-icon" size={32} />
+                    <div className="stat-value">{stats.skipped}</div>
+                    <div className="stat-label">Skipped (0)</div>
                 </div>
 
                 <div className="stat-card time-card">
@@ -168,11 +291,11 @@ const Performance = () => {
                         <div
                             key={index}
                             className={`question-box status-${question.status}`}
-                            title={`Question ${question.questionNumber}: ${question.status} (${question.subject})`}
+                            title={`${question.questionNumber} (Test ${question.testNumber}): ${question.status} (${question.subject})`}
                         >
                             <span className="question-number">{question.questionNumber}</span>
                             <span className="status-icon">
-                                {question.status === 'correct' ? '✓' : '✗'}
+                                {question.status === 'correct' ? '✔' : question.status === 'incorrect' ? '❌' : 'Ø'}
                             </span>
                         </div>
                     ))}
@@ -180,11 +303,15 @@ const Performance = () => {
                 <div className="legend">
                     <div className="legend-item">
                         <div className="legend-box correct"></div>
-                        <span>Correct</span>
+                        <span>✔ Correct</span>
                     </div>
                     <div className="legend-item">
                         <div className="legend-box incorrect"></div>
-                        <span>Incorrect</span>
+                        <span>❌ Incorrect</span>
+                    </div>
+                    <div className="legend-item">
+                        <div className="legend-box skipped"></div>
+                        <span>Ø Skipped</span>
                     </div>
                 </div>
             </div>

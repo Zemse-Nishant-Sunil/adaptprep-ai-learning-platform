@@ -11,12 +11,15 @@ const SignUp = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        examType: 'jee'
+        examType: 'jee',
+        avatar: 'avatar_1.jpg'
     });
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
 
     const { signUp } = useUser();
+
+    const avatarOptions = Array.from({ length: 10 }, (_, i) => `avatar_${i + 1}.jpg`);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -32,6 +35,13 @@ const SignUp = () => {
                 [name]: ''
             }));
         }
+    };
+
+    const handleAvatarSelect = (avatar) => {
+        setFormData(prev => ({
+            ...prev,
+            avatar
+        }));
     };
 
     const validateForm = () => {
@@ -71,7 +81,7 @@ const SignUp = () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        const result = await signUp(formData.name, formData.email, formData.password, formData.examType);
+        const result = await signUp(formData.name, formData.email, formData.password, formData.examType, formData.avatar);
 
         if (result.success) {
             navigate('/dashboard');
@@ -97,6 +107,28 @@ const SignUp = () => {
                 {errors.general && <div className="error-message">{errors.general}</div>}
 
                 <form className="signup-form" onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>Choose Your Avatar</label>
+                        <p className="form-hint">Select your profile picture (you can change this later)</p>
+                        <div className="avatar-grid">
+                            {avatarOptions.map((avatar) => (
+                                <button
+                                    key={avatar}
+                                    type="button"
+                                    className={`avatar-option ${formData.avatar === avatar ? 'selected' : ''}`}
+                                    onClick={() => handleAvatarSelect(avatar)}
+                                    disabled={isLoading}
+                                    title={avatar}
+                                >
+                                    <img
+                                        src={`/assets/avatar/${avatar}`}
+                                        alt={avatar}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="form-group">
                         <label>Full Name</label>
                         <div className="input-wrapper">

@@ -45,17 +45,25 @@
 
 .profile-avatar {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 70px;
+    height: 70px;
     background: var(--gradient-primary);
     border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 800;
     color: white;
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-full);
 }
 
 .avatar-edit-btn {
@@ -332,6 +340,48 @@
 .progress-message.info {
     background: rgba(59, 130, 246, 0.1);
     color: var(--info);
+}
+
+.avatar-grid-small {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+}
+
+.avatar-option-small {
+    aspect-ratio: 1;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.avatar-option-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-base);
+}
+
+.avatar-option-small:hover {
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.avatar-option-small.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.avatar-option-small:hover img {
+    transform: scale(1.1);
 }
 
 @media (max-width: 768px) {

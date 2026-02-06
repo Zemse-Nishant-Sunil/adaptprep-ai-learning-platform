@@ -8,7 +8,7 @@ const Profile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({
         name: '',
-        examType: ''
+        avatar: 'avatar_1.jpg'
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -45,7 +45,7 @@ const Profile = () => {
     const handleEditClick = () => {
         setEditForm({
             name: user.name,
-            examType: user.examType || 'JEE'
+            avatar: user.avatar || 'avatar_1.jpg'
         });
         setIsEditing(true);
     };
@@ -58,15 +58,16 @@ const Profile = () => {
                 body: JSON.stringify(editForm)
             });
 
-            if (response.success) {
-                // Update local user state
+            if (response && response.user) {
+                // Update succeeded
                 setIsEditing(false);
-                // Optionally refresh user data
-                window.location.reload(); // Simple refresh for now
+                alert('Profile updated successfully!');
+                // Reload to get the latest data from backend
+                window.location.reload();
             }
         } catch (error) {
             console.error('Failed to update profile:', error);
-            alert('Failed to update profile. Please try again.');
+            alert('Failed to update profile: ' + error.message);
         } finally {
             setIsSaving(false);
         }
@@ -74,7 +75,7 @@ const Profile = () => {
 
     const handleCancel = () => {
         setIsEditing(false);
-        setEditForm({ name: '', examType: '' });
+        setEditForm({ name: '', avatar: 'avatar_1.jpg' });
     };
 
     const handleInputChange = (e) => {
@@ -104,31 +105,45 @@ const Profile = () => {
                 <div className="profile-card animate-slide-up">
                     <div className="profile-avatar-section">
                         <div className="profile-avatar">
-                            <span>{user.avatar}</span>
-                            <button className="avatar-edit-btn" title="Change Avatar">
-                                <Camera size={16} />
-                            </button>
+                            <img 
+                                src={`/assets/avatar/${user.avatar || 'avatar_1.jpg'}`}
+                                alt={user.name}
+                                className="avatar-image"
+                            />
                         </div>
                         <div className="profile-basic-info">
                             {isEditing ? (
                                 <div className="edit-form">
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={editForm.name}
-                                        onChange={handleInputChange}
-                                        placeholder="Your name"
-                                        className="edit-input"
-                                    />
-                                    <select
-                                        name="examType"
-                                        value={editForm.examType}
-                                        onChange={handleInputChange}
-                                        className="edit-select"
-                                    >
-                                        <option value="JEE">JEE</option>
-                                        <option value="NEET">NEET</option>
-                                    </select>
+                                    <div className="edit-form-group">
+                                        <label>Your Name</label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={editForm.name}
+                                            onChange={handleInputChange}
+                                            placeholder="Your name"
+                                            className="edit-input"
+                                        />
+                                    </div>
+                                    <div className="edit-form-group">
+                                        <label>Choose Avatar</label>
+                                        <div className="avatar-grid-small">
+                                            {Array.from({ length: 10 }, (_, i) => `avatar_${i + 1}.jpg`).map((avatar) => (
+                                                <button
+                                                    key={avatar}
+                                                    type="button"
+                                                    className={`avatar-option-small ${editForm.avatar === avatar ? 'selected' : ''}`}
+                                                    onClick={() => setEditForm(prev => ({ ...prev, avatar }))}
+                                                    title={avatar}
+                                                >
+                                                    <img
+                                                        src={`/assets/avatar/${avatar}`}
+                                                        alt={avatar}
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <>

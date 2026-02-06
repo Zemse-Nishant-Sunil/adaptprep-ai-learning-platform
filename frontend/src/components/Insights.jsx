@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Brain, TrendingUp, Target, Award, Clock, BookOpen, Sparkles, Lightbulb } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import StreakCalendar from './StreakCalendar';
 import './Insights.css';
 
 const Insights = () => {
@@ -37,33 +38,53 @@ const Insights = () => {
                 averageScore: 0,
                 accuracy: 0,
                 totalTimeTaken: 0,
+                totalRawScore: 0,
                 strengths: [],
-                weaknesses: []
+                weaknesses: [],
+                subjectStats: {}
             };
         }
 
-        const totalQuestions = testResults.reduce((sum, test) => sum + (test.totalQuestions || 0), 0);
-        const totalCorrect = testResults.reduce((sum, test) => sum + (test.score || 0), 0);
+        // Filter valid test results
+        const validResults = testResults.filter(test => test && test.totalQuestions && test.correctAnswers !== undefined);
+        
+        if (validResults.length === 0) {
+            return {
+                totalTests: testResults.length,
+                averageScore: 0,
+                accuracy: 0,
+                totalTimeTaken: 0,
+                totalRawScore: 0,
+                strengths: [],
+                weaknesses: [],
+                subjectStats: {}
+            };
+        }
+
+        const totalQuestions = validResults.reduce((sum, test) => sum + (test.totalQuestions || 0), 0);
+        const totalCorrect = validResults.reduce((sum, test) => sum + (test.correctAnswers || 0), 0);
+        const totalRawScore = validResults.reduce((sum, test) => sum + (test.rawScore || 0), 0);
         const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-        const totalTime = testResults.reduce((sum, test) => sum + (test.timeTaken || 0), 0);
+        const totalTime = validResults.reduce((sum, test) => sum + (test.timeTaken || 0), 0);
 
         // Calculate subject performance
         const subjectStats = {};
-        testResults.forEach(test => {
-            const subject = test.subject;
+        validResults.forEach(test => {
+            const subject = test.subject || 'Unknown';
             if (!subjectStats[subject]) {
-                subjectStats[subject] = { correct: 0, total: 0, tests: 0 };
+                subjectStats[subject] = { correctAnswers: 0, total: 0, tests: 0, rawScore: 0 };
             }
-            subjectStats[subject].correct += test.score || 0;
+            subjectStats[subject].correctAnswers += test.correctAnswers || 0;
             subjectStats[subject].total += test.totalQuestions || 0;
             subjectStats[subject].tests += 1;
+            subjectStats[subject].rawScore += test.rawScore || 0;
         });
 
         const strengths = [];
         const weaknesses = [];
 
         Object.entries(subjectStats).forEach(([subject, stats]) => {
-            const subjectAccuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
+            const subjectAccuracy = stats.total > 0 ? (stats.correctAnswers / stats.total) * 100 : 0;
             if (subjectAccuracy >= 70) {
                 strengths.push(subject);
             } else if (subjectAccuracy < 50) {
@@ -72,10 +93,11 @@ const Insights = () => {
         });
 
         return {
-            totalTests: testResults.length,
-            averageScore: safeUserData.averageScore || 0,
-            accuracy: accuracy,
+            totalTests: validResults.length,
+            averageScore: isNaN(accuracy) ? 0 : accuracy,
+            accuracy: isNaN(accuracy) ? 0 : accuracy,
             totalTimeTaken: totalTime,
+            totalRawScore: totalRawScore,
             strengths,
             weaknesses,
             subjectStats
@@ -179,7 +201,7 @@ const Insights = () => {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Overall Accuracy</p>
-                        <h3 className="stat-value">{stats.accuracy.toFixed(1)}%</h3>
+                        <h3 className="stat-value">{isNaN(stats.accuracy) ? '0.0' : stats.accuracy.toFixed(1)}%</h3>
                         <span className={`stat-change ${stats.accuracy >= 70 ? 'positive' : stats.accuracy >= 50 ? 'neutral' : 'negative'}`}>
                             {stats.accuracy >= 70 ? 'Excellent!' : stats.accuracy >= 50 ? 'Good Progress' : 'Needs Improvement'}
                         </span>
@@ -331,50 +353,10 @@ const Insights = () => {
                 <div className="prediction-card">
                     <div className="prediction-header">
                         <Brain size={32} />
-                        <h2>AI Performance Prediction</h2>
+                        <h2>Test Streak Tracker</h2>
                     </div>
                     <div className="prediction-content">
-                        <div className="prediction-visual">
-                            <div className="gauge" style={{ '--fill': `${Math.min(stats.accuracy, 100)}%` }}>
-                                <div className="gauge-center">
-                                    <div className="gauge-value">{stats.accuracy.toFixed(0)}%</div>
-                                    <div className="gauge-label">Current Level</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="prediction-details">
-                            <h3>Performance Forecast</h3>
-                            <p className="prediction-text">
-                                Based on your current performance, you're showing{' '}
-                                <strong>
-                                    {stats.accuracy >= 70 ? 'excellent' : stats.accuracy >= 50 ? 'good' : 'developing'}
-                                </strong>{' '}
-                                progress in your preparation.
-                            </p>
-                            <div className="prediction-metrics">
-                                <div className="metric">
-                                    <span className="metric-label">Next Goal</span>
-                                    <span className="metric-value">
-                                        {stats.accuracy >= 80 ? '90%' : Math.ceil((stats.accuracy + 10) / 10) * 10 + '%'}
-                                    </span>
-                                </div>
-                                <div className="metric">
-                                    <span className="metric-label">Est. Time</span>
-                                    <span className="metric-value">
-                                        {stats.totalTests < 5 ? '2-3 weeks' : '1-2 weeks'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="prediction-message">
-                        <p>
-                            💡 <strong>AI Tip:</strong> {
-                                stats.accuracy >= 70
-                                    ? 'You\'re doing great! Focus on maintaining consistency and tackling advanced problems.'
-                                    : 'Focus on building strong fundamentals. Quality practice over quantity will help you improve faster.'
-                            }
-                        </p>
+                        <StreakCalendar testResults={safeUserData.testResults || []} />
                     </div>
                 </div>
             </div>

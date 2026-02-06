@@ -111,11 +111,11 @@ export const UserProvider = ({ children }) => {
     };
 
     // Sign up
-    const signUp = async (name, email, password, examType = 'jee') => {
+    const signUp = async (name, email, password, examType = 'jee', avatar = 'avatar_1.jpg') => {
         try {
             const response = await apiRequest('/auth/signup', {
                 method: 'POST',
-                body: JSON.stringify({ name, email, password, examType })
+                body: JSON.stringify({ name, email, password, examType, avatar })
             });
 
             setToken(response.token);
@@ -125,7 +125,7 @@ export const UserProvider = ({ children }) => {
                 ...response.user,
                 examType: response.user.examType || examType,
                 name: response.user.name || name,
-                avatar: response.user.avatar || (name?.substring(0, 2) || 'ST').toUpperCase()
+                avatar: response.user.avatar || avatar
             };
 
             setUser(userWithDefaults);
@@ -164,9 +164,14 @@ export const UserProvider = ({ children }) => {
     };
 
     // Get questions
-    const getQuestions = async (examType, subject, count = 10) => {
+    const getQuestions = async (examType, subject, testNumber = null, count = 10) => {
         try {
-            const response = await apiRequest(`/questions/${examType}/${subject}?count=${count}`);
+            // Build URL with optional test number
+            const url = testNumber 
+                ? `/questions/${examType}/${subject}/${testNumber}?count=${count}`
+                : `/questions/${examType}/${subject}?count=${count}`;
+            
+            const response = await apiRequest(url);
             return { success: true, questions: response.questions };
         } catch (error) {
             return { success: false, error: error.message };

@@ -97,7 +97,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
-    color: black;
+    color: #210f35;
 }
 
 .stat-box::before {
@@ -146,7 +146,7 @@
 }
 
 .stat-label {
-    color: #0a0e14;
+    color: #210f35;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -157,14 +157,14 @@
 .stat-value {
     font-size: 2rem;
     font-weight: 900;
-    color: var(--text-primary);
+    color: #210f35;
     margin: 0.3rem 0 0.5rem 0;
     font-family: var(--font-mono);
 }
 
 .stat-change {
     font-size: 0.85rem;
-    color: #191b1f;
+    color: #210f35;
     display: block;
 }
 

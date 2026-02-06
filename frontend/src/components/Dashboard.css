@@ -60,6 +60,14 @@
     font-size: 1.5rem;
     color: var(--bg-primary);
     box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-md);
 }
 
 .student-details h2 {
@@ -194,13 +202,13 @@
 
 .chat-card {
     background: var(--gradient-primary);
-    color: white;
+    color: #6b7280;
     border-color: var(--primary);
 }
 
 .chat-card h3,
 .chat-card p {
-    color: white;
+    color: #6b7280;
 }
 
 .chat-card small {
@@ -208,7 +216,7 @@
     margin-top: var(--spacing-xs);
     opacity: 0.9;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: #6b7280;
 }
 
 .recent-tests {
@@ -445,6 +453,7 @@
     margin-bottom: var(--spacing-sm);
     background: var(--gradient-primary);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     font-family: var(--font-display);
     font-weight: 800;

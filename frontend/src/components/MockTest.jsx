@@ -10,6 +10,7 @@ const TEST_DURATION = 600; // 10 minutes in seconds
 const MockTest = () => {
     // State variables
     const [selectedSubject, setSelectedSubject] = useState('Physics');
+    const [selectedTest, setSelectedTest] = useState('test1');
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState([]);
@@ -52,7 +53,8 @@ const MockTest = () => {
         setIsLoading(true);
 
         try {
-            const result = await getQuestions(selectedExam, selectedSubject, 10);
+            const testNumber = parseInt(selectedTest.replace('test', ''));
+            const result = await getQuestions(selectedExam, selectedSubject, testNumber, 10);
 
             if (result.success) {
                 const normalizedQuestions = result.questions.map(q => ({
@@ -84,14 +86,27 @@ const MockTest = () => {
         clearInterval(timer.current);
         setTestStarted(false);
 
-        // Calculate results with correct answer verification
+        // Calculate results with JEE/NEET scoring format (+4 for correct, -1 for incorrect, 0 for skipped)
+        let rawScore = 0;
         let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let skippedAnswers = 0;
+        
         const detailedResults = questions.map((question, index) => {
             const correctAnswerIndex = getCorrectAnswerIndex(question);
             const userAnswerIndex = userAnswers[index];
             const isCorrect = userAnswerIndex === correctAnswerIndex;
+            const isSkipped = userAnswerIndex === null;
 
-            if (isCorrect) correctAnswers++;
+            if (isCorrect) {
+                correctAnswers++;
+                rawScore += 4;
+            } else if (!isSkipped) {
+                incorrectAnswers++;
+                rawScore -= 1;
+            } else {
+                skippedAnswers++;
+            }
 
             return {
                 id: question.id,
@@ -100,7 +115,7 @@ const MockTest = () => {
                 userAnswer: userAnswerIndex,
                 correct: correctAnswerIndex,
                 isCorrect: isCorrect,
-                status: userAnswerIndex === null ? 'skipped' : isCorrect ? 'correct' : 'incorrect',
+                status: isSkipped ? 'skipped' : isCorrect ? 'correct' : 'incorrect',
                 explanation: question.explanation,
                 theory: question.theory,
                 topic: question.topic,
@@ -112,28 +127,37 @@ const MockTest = () => {
         const timeTaken = Math.round((Date.now() - startTime) / 1000);
         const accuracy = Math.round((correctAnswers / questions.length) * 100);
 
-        // Save result to backend
+        // Extract question statuses in order for accurate tracking
+        const questionStatuses = detailedResults.map(result => result.status);
+
+        // Save result to backend with JEE/NEET format
         const testResult = {
             examType: selectedExam,
             subject: selectedSubject,
-            score: correctAnswers,
+            testNumber: parseInt(selectedTest.replace('test', '')),
+            rawScore: rawScore,
+            correctAnswers: correctAnswers,
+            incorrectAnswers: incorrectAnswers,
+            skipped: skippedAnswers,
             totalQuestions: questions.length,
-            timeTaken: timeTaken
+            timeTaken: timeTaken,
+            questionStatuses: questionStatuses
         };
 
         await saveTestResult(testResult);
 
         setResults({
-            score: correctAnswers,
+            rawScore: rawScore,
+            correctAnswers: correctAnswers,
+            incorrectAnswers: incorrectAnswers,
+            skipped: skippedAnswers,
             totalQuestions: questions.length,
             percentage: accuracy,
             timeTaken: timeTaken,
             accuracy: accuracy,
             detailedResults: detailedResults,
             questions: detailedResults,
-            total: questions.length,
-            incorrect: detailedResults.filter(q => q.status === 'incorrect').length,
-            skipped: detailedResults.filter(q => q.status === 'skipped').length
+            total: questions.length
         });
 
         setShowResults(true);
@@ -223,6 +247,21 @@ const MockTest = () => {
                                         </div>
                                         <div className="subject-name">{subject}</div>
                                         <div className="subject-info">10 Questions</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="test-selection">
+                            <h3>Select Test (1-10)</h3>
+                            <div className="test-grid">
+                                {Array.from({ length: 10 }, (_, i) => `test${i + 1}`).map((testNum) => (
+                                    <button
+                                        key={testNum}
+                                        className={`test-card ${selectedTest === testNum ? 'active' : ''}`}
+                                        onClick={() => setSelectedTest(testNum)}
+                                    >
+                                        <span className="test-number">{testNum.replace('test', '')}</span>
                                     </button>
                                 ))}
                             </div>
@@ -318,8 +357,9 @@ const MockTest = () => {
     // Results Screen
     if (showResults && results) {
         const pieData = [
-            { name: 'Correct', value: results.score, color: '#10B981' },
-            { name: 'Incorrect', value: results.totalQuestions - results.score, color: '#EF4444' }
+            { name: 'Correct', value: results.correctAnswers, color: '#10B981' },
+            { name: 'Incorrect', value: results.incorrectAnswers, color: '#EF4444' },
+            { name: 'Skipped', value: results.skipped, color: '#F59E0B' }
         ];
 
         const aiInsights = getAIAnalysis();
@@ -335,13 +375,23 @@ const MockTest = () => {
                 <div className="results-summary animate-scale-in">
                     <div className="summary-card primary">
                         <div className="card-icon">🎯</div>
-                        <div className="card-value">{results.score}/{results.totalQuestions}</div>
-                        <div className="card-label">Score</div>
+                        <div className="card-value">{results.rawScore}</div>
+                        <div className="card-label">Raw Score</div>
                     </div>
                     <div className="summary-card success">
                         <div className="card-icon">✅</div>
-                        <div className="card-value">{results.accuracy}%</div>
-                        <div className="card-label">Accuracy</div>
+                        <div className="card-value">{results.correctAnswers}</div>
+                        <div className="card-label">Correct (+4 each)</div>
+                    </div>
+                    <div className="summary-card error">
+                        <div className="card-icon">❌</div>
+                        <div className="card-value">{results.incorrectAnswers}</div>
+                        <div className="card-label">Incorrect (-1 each)</div>
+                    </div>
+                    <div className="summary-card warning">
+                        <div className="card-icon">⏭️</div>
+                        <div className="card-value">{results.skipped}</div>
+                        <div className="card-label">Skipped (0 each)</div>
                     </div>
                     <div className="summary-card info">
                         <div className="card-icon">⏱️</div>

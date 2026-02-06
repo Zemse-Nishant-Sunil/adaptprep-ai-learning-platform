@@ -4,20 +4,48 @@ const { questionBank } = require('../data/questionBank');
 
 const router = express.Router();
 
-// Get questions by exam type and subject
-router.get('/:examType/:subject', auth, async (req, res) => {
+// Get questions by exam type, subject, and optional test number
+router.get('/:examType/:subject/:testNumber?', auth, async (req, res) => {
     try {
-        const { examType, subject } = req.params;
+        const { examType, subject, testNumber } = req.params;
         const { count = 10 } = req.query;
 
-        const questions = questionBank[examType]?.[subject];
+        // Convert examType to lowercase for consistent lookup
+        const normalizedExamType = examType.toLowerCase();
+        const normalizedSubject = subject.toLowerCase();
+
+        let questions = questionBank[normalizedExamType]?.[normalizedSubject];
         if (!questions) {
             return res.status(404).json({ message: 'Questions not found' });
         }
 
-        // Shuffle and return requested number of questions
-        const shuffled = questions.sort(() => 0.5 - Math.random());
-        const selectedQuestions = shuffled.slice(0, parseInt(count));
+        // If test number is specified, get questions from that specific test
+        if (testNumber) {
+            const testKey = `test${testNumber}`;
+            if (questions[testKey]) {
+                // Questions are already in the test format (array of 10)
+                questions = questions[testKey];
+            } else {
+                return res.status(404).json({ message: `Test ${testNumber} not found` });
+            }
+        } else {
+            // If no test number, flatten all questions from all tests
+            if (Array.isArray(questions)) {
+                // Old format - just use as is
+            } else if (typeof questions === 'object' && questions.test1) {
+                // New format - flatten all test questions
+                questions = Object.keys(questions)
+                    .sort((a, b) => {
+                        const numA = parseInt(a.replace('test', ''));
+                        const numB = parseInt(b.replace('test', ''));
+                        return numA - numB;
+                    })
+                    .reduce((acc, key) => [...acc, ...questions[key]], []);
+            }
+        }
+
+        // Return requested number of questions (or all if test number specified)
+        const selectedQuestions = testNumber ? questions : questions.sort(() => 0.5 - Math.random()).slice(0, parseInt(count));
 
         res.json({ questions: selectedQuestions });
     } catch (error) {
