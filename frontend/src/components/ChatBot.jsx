@@ -66,17 +66,28 @@ const ChatBot = () => {
         setInputMessage('');
         setIsLoading(true);
 
+        // Prepare context with all user data
+        const contextData = {
+            examType: user?.examType || 'JEE',
+            userName: user?.name || 'Student',
+            userEmail: user?.email || '',
+            userLevel: getUserLevel(),
+            totalTests: userData?.totalTests || 0,
+            averageScore: userData?.averageScore || 0,
+            testResults: userData?.testResults || [],
+            strongSubjects: userData?.strongSubjects || [],
+            weakSubjects: userData?.weakSubjects || [],
+            createdAt: user?.createdAt || ''
+        };
+
+        console.log('Sending context to ChatBot:', contextData);
+
         try {
             const response = await apiRequest('/chat/message', {
                 method: 'POST',
                 body: JSON.stringify({
                     message: currentMessage,
-                    context: {
-                        examType: user?.examType || 'JEE',
-                        userName: user?.name || 'Student',
-                        userLevel: getUserLevel(),
-                        averageScore: userData?.averageScore || 0
-                    }
+                    context: contextData
                 })
             });
 

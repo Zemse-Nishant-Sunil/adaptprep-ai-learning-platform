@@ -8,7 +8,12 @@ const router = express.Router();
 // Signup
 router.post('/signup', async (req, res) => {
     try {
-        const { email, password, examType } = req.body;
+        const { name, email, password, examType } = req.body;
+
+        // Validate required fields
+        if (!name) {
+            return res.status(400).json({ message: 'Name is required' });
+        }
 
         // Validate examType
         if (!examType || !['jee', 'neet'].includes(examType.toLowerCase())) {
@@ -22,7 +27,7 @@ router.post('/signup', async (req, res) => {
         }
 
         // Create user
-        const user = new User({ email, password, examType: examType.toLowerCase() });
+        const user = new User({ name, email, password, examType: examType.toLowerCase() });
         await user.save();
 
         // Create user data
@@ -41,6 +46,7 @@ router.post('/signup', async (req, res) => {
             token,
             user: {
                 id: user._id,
+                name: user.name,
                 email: user.email,
                 examType: user.examType
             }
@@ -79,6 +85,7 @@ router.post('/login', async (req, res) => {
             token,
             user: {
                 id: user._id,
+                name: user.name,
                 email: user.email,
                 examType: user.examType
             }

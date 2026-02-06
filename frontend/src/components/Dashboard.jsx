@@ -7,6 +7,7 @@ import './Dashboard.css';
 const Dashboard = () => {
     const { user, userData, loading } = useUser();
 
+    // console.log(user, userData)
     if (loading) {
         return (
             <div className="dashboard">
@@ -85,10 +86,10 @@ const Dashboard = () => {
 
             <div className="student-info animate-slide-up">
                 <div className="avatar">
-                    {user.avatar || user.email?.substring(0, 2).toUpperCase() || 'ST'}
+                    {user.avatar}
                 </div>
                 <div className="student-details">
-                    <h2>{user.name || user.email?.split('@')[0] || 'Student'}</h2>
+                    <h2>{user.name}</h2>
                     <p className="mono">{user.email || 'No email'}</p>
                 </div>
                 <div className="exam-badge">
@@ -251,5 +252,6 @@ const Dashboard = () => {
         </div>
     );
 };
+
 
 export default Dashboard;

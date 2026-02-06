@@ -94,12 +94,12 @@ export const UserProvider = ({ children }) => {
 
             setToken(response.token);
 
-            // Set user with default examType if not provided
+            // Set user with values from response
             const userWithDefaults = {
                 ...response.user,
                 examType: response.user.examType || 'jee',
-                name: response.user.name || response.user.email?.split('@')[0] || 'Student',
-                avatar: response.user.avatar || response.user.email?.substring(0, 2).toUpperCase() || 'ST'
+                name: response.user.name || 'Student',
+                avatar: response.user.avatar || (response.user.name?.substring(0, 2) || 'ST').toUpperCase()
             };
 
             setUser(userWithDefaults);
@@ -111,21 +111,21 @@ export const UserProvider = ({ children }) => {
     };
 
     // Sign up
-    const signUp = async (email, password, examType = 'jee') => {
+    const signUp = async (name, email, password, examType = 'jee') => {
         try {
             const response = await apiRequest('/auth/signup', {
                 method: 'POST',
-                body: JSON.stringify({ email, password, examType })
+                body: JSON.stringify({ name, email, password, examType })
             });
 
             setToken(response.token);
 
-            // Set user with default values if not provided
+            // Set user with values from response
             const userWithDefaults = {
                 ...response.user,
                 examType: response.user.examType || examType,
-                name: response.user.name || response.user.email?.split('@')[0] || 'Student',
-                avatar: response.user.avatar || response.user.email?.substring(0, 2).toUpperCase() || 'ST'
+                name: response.user.name || name,
+                avatar: response.user.avatar || (name?.substring(0, 2) || 'ST').toUpperCase()
             };
 
             setUser(userWithDefaults);

@@ -44,7 +44,7 @@ const Profile = () => {
 
     const handleEditClick = () => {
         setEditForm({
-            name: user.name || user.email?.split('@')[0] || 'Student',
+            name: user.name,
             examType: user.examType || 'JEE'
         });
         setIsEditing(true);
@@ -104,7 +104,7 @@ const Profile = () => {
                 <div className="profile-card animate-slide-up">
                     <div className="profile-avatar-section">
                         <div className="profile-avatar">
-                            <span>{user.avatar || user.email?.substring(0, 2).toUpperCase() || 'ST'}</span>
+                            <span>{user.avatar}</span>
                             <button className="avatar-edit-btn" title="Change Avatar">
                                 <Camera size={16} />
                             </button>
@@ -132,7 +132,7 @@ const Profile = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <h2>{user.name || user.email?.split('@')[0] || 'Student'}</h2>
+                                    <h2>{user.name}</h2>
                                     <p className="profile-email">{user.email}</p>
                                     <div className="profile-exam-badge">
                                         <span>{user.examType?.toUpperCase() || 'JEE'} Aspirant</span>

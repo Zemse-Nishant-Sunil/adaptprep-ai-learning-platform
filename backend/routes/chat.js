@@ -68,6 +68,7 @@ router.post('/message', auth, async (req, res) => {
     try {
         const { message, context } = req.body;
         const userId = req.user.id;
+        console.log(context)
 
         if (!message || !message.trim()) {
             return res.status(400).json({ error: 'Message is required' });

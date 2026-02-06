@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, Mail, Lock, ArrowRight } from 'lucide-react';
+import { GraduationCap, Mail, Lock, ArrowRight, User } from 'lucide-react';
 import './SignUp.css';
 import { useUser } from '../contexts/UserContext';
 
 const SignUp = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
+        name: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -36,6 +37,12 @@ const SignUp = () => {
     const validateForm = () => {
         const newErrors = {};
 
+        if (!formData.name) {
+            newErrors.name = 'Full name is required';
+        } else if (formData.name.length < 2) {
+            newErrors.name = 'Name must be at least 2 characters';
+        }
+
         if (!formData.email) {
             newErrors.email = 'Email is required';
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -64,7 +71,7 @@ const SignUp = () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        const result = await signUp(formData.email, formData.password, formData.examType);
+        const result = await signUp(formData.name, formData.email, formData.password, formData.examType);
 
         if (result.success) {
             navigate('/dashboard');
@@ -91,6 +98,25 @@ const SignUp = () => {
 
                 <form className="signup-form" onSubmit={handleSubmit}>
                     <div className="form-group">
+                        <label>Full Name</label>
+                        <div className="input-wrapper">
+                            <User size={20} />
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="Enter your full name"
+                                disabled={isLoading}
+                            />
+                        </div>
+                        {errors.name && <small className="error-hint">{errors.name}</small>}
+                        <small className="form-hint">
+                            We'll use this to personalize your experience
+                        </small>
+                    </div>
+
+                    <div className="form-group">
                         <label>Email Address</label>
                         <div className="input-wrapper">
                             <Mail size={20} />
@@ -103,6 +129,7 @@ const SignUp = () => {
                                 disabled={isLoading}
                             />
                         </div>
+                        {errors.email && <small className="error-hint">{errors.email}</small>}
                         <small className="form-hint">
                             We'll use this email to create your account
                         </small>
@@ -121,6 +148,7 @@ const SignUp = () => {
                                 disabled={isLoading}
                             />
                         </div>
+                        {errors.password && <small className="error-hint">{errors.password}</small>}
                         <small className="form-hint">
                             Must contain uppercase, lowercase, and numbers
                         </small>
@@ -139,6 +167,7 @@ const SignUp = () => {
                                 disabled={isLoading}
                             />
                         </div>
+                        {errors.confirmPassword && <small className="error-hint">{errors.confirmPassword}</small>}
                     </div>
 
                     <div className="form-group">
