@@ -4,10 +4,37 @@ A complete Node.js + Express + MongoDB backend for the AdaptPrep exam preparatio
 
 ## Features
 
-- 🔐 JWT Authentication with bcrypt
-- 📊 User progress tracking
-- 📚 Question Bank API (JEE/NEET)
+### Authentication & User Management
+- 🔐 JWT Authentication with bcrypt password hashing
+- 👤 User registration and login
+- 👥 User profile management
+- 📝 User data persistence
+
+### Question Bank & Testing
+- 📚 Question Bank API supporting JEE and NEET exams
+- 🧮 Multiple subjects: Physics, Chemistry, Mathematics (JEE) & Biology (NEET)
+- 📊 Mock test creation and management
+- ✅ Test result recording with detailed answers
+- 📈 Performance tracking with accuracy metrics
+
+### AI Features
+- 🤖 Google Gemini AI integration for personalized study coaching
+- 💬 Interactive chat-based learning assistant
+- 🎯 Context-aware responses using user's test history
+- 📋 Incorrect question analysis and targeted help
+
+### Analytics & Progress
+- 📊 User progress tracking with test history
+- 📈 Subject-wise performance analysis
+- 🎓 Strong/Weak subject identification
+- 💯 Average score calculation and trends
+- 🔍 Detailed question analysis with explanations
+
+### Security & Performance
 - 🔒 Rate Limiting & Security
+- 🛡️ Input validation and sanitization
+- 🔄 CORS protection
+- ⚡ Optimized database queries
 
 ## Quick Start
 
@@ -43,17 +70,24 @@ A complete Node.js + Express + MongoDB backend for the AdaptPrep exam preparatio
 
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/signup` - User registration
-- `POST /api/auth/login` - User login
+### Authentication Routes
+- `POST /api/auth/signup` - User registration with email and password
+- `POST /api/auth/login` - User login and JWT token generation
 
-### User Management
-- `GET /api/user/profile` - Get user profile
-- `POST /api/user/test-results` - Save test results
+### User Management Routes
+- `GET /api/user/profile` - Get user profile and userData with test history
+- `PUT /api/user/profile` - Update user profile (name, avatar)
+- `POST /api/user/test-results` - Save test results with detailed answers
 
-### Questions
-- `GET /api/questions/:examType/:subject` - Get questions
-- `GET /api/questions` - Get exam structure
+### Questions Routes
+- `GET /api/questions` - Get exam structure and available subjects
+- `GET /api/questions/:examType/:subject` - Get questions for specific exam type and subject
+
+### Chat/AI Routes
+- `POST /api/chat/initialize` - Initialize new chat session
+- `POST /api/chat/send` - Send message to AI coach and get response
+- `GET /api/chat/sessions` - Get user's chat session history
+- `GET /api/chat/session/:sessionId` - Get chat messages from a session
 
 ## Getting Google Gemini API Key
 
@@ -64,8 +98,10 @@ A complete Node.js + Express + MongoDB backend for the AdaptPrep exam preparatio
 
 ## Database Models
 
-- **User**: Authentication data
-- **UserData**: Test results and progress
+- **User**: Authentication data, profile info (name, email, examType, avatar)
+- **UserData**: Test results, performance metrics, strong/weak subjects
+- **Chat**: Chat sessions and messages with AI coach
+- **Message History**: Conversation history for context-aware responses
 
 ## Security Features
 

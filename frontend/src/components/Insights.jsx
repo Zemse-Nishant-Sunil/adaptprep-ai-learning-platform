@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Brain, TrendingUp, Target, Award, Clock, BookOpen, Sparkles, Lightbulb } from 'lucide-react';
+import { Brain, TrendingUp, Target, Award, BookOpen, Sparkles, Lightbulb } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import StreakCalendar from './StreakCalendar';
 import './Insights.css';
 
 const Insights = () => {
@@ -352,17 +351,7 @@ const Insights = () => {
                 </div>
             )}
 
-            <div className="progress-prediction animate-slide-up">
-                <div className="prediction-card">
-                    <div className="prediction-header">
-                        <Brain size={32} />
-                        <h2>Test Streak Tracker</h2>
-                    </div>
-                    <div className="prediction-content">
-                        <StreakCalendar testResults={safeUserData.testResults || []} />
-                    </div>
-                </div>
-            </div>
+
         </div>
     );
 };

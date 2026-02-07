@@ -39,13 +39,6 @@ const userDataSchema = new mongoose.Schema({
     averageScore: { type: Number, default: 0 },
     strongSubjects: [String],
     weakSubjects: [String],
-    currentStreak: { type: Number, default: 0 },
-    maxStreak: { type: Number, default: 0 },
-    lastTestDate: { type: Date, default: null },
-    streakHistory: [{
-        date: { type: Date },
-        status: { type: String, enum: ['completed', 'missed'] }
-    }],
     lastUpdated: { type: Date, default: Date.now }
 });
 

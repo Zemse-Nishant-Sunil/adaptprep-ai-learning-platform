@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Award, Target, TrendingUp, Brain } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import StreakBoard from './StreakBoard';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -122,11 +120,6 @@ const Dashboard = () => {
                     <span className="exam-label">{user.examType?.toUpperCase() || 'JEE'}</span>
                 </div>
             </div>
-
-            <StreakBoard 
-                currentStreak={safeUserData.currentStreak || 0}
-                maxStreak={safeUserData.maxStreak || 0}
-            />
 
             <div className="dashboard-content">
                 <div className="stats-overview">

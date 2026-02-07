@@ -1,16 +1,10 @@
-import React, { useState } from 'react';
-import { User, Mail, Calendar, Award, Edit3, Save, X, Camera } from 'lucide-react';
+import React from 'react';
+import { User, Mail, Calendar, Award } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import './Profile.css';
 
 const Profile = () => {
-    const { user, userData, loading, apiRequest } = useUser();
-    const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({
-        name: '',
-        avatar: 'avatar_1.jpg'
-    });
-    const [isSaving, setIsSaving] = useState(false);
+    const { user, userData, loading } = useUser();
 
     // Safe defaults
     const safeUserData = {
@@ -42,50 +36,6 @@ const Profile = () => {
         );
     }
 
-    const handleEditClick = () => {
-        setEditForm({
-            name: user.name,
-            avatar: user.avatar || 'avatar_1.jpg'
-        });
-        setIsEditing(true);
-    };
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        try {
-            const response = await apiRequest('/user/profile', {
-                method: 'PUT',
-                body: JSON.stringify(editForm)
-            });
-
-            if (response && response.user) {
-                // Update succeeded
-                setIsEditing(false);
-                alert('Profile updated successfully!');
-                // Reload to get the latest data from backend
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error('Failed to update profile:', error);
-            alert('Failed to update profile: ' + error.message);
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleCancel = () => {
-        setIsEditing(false);
-        setEditForm({ name: '', avatar: 'avatar_1.jpg' });
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditForm(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
     // Calculate profile stats
     const profileStats = {
         testsCompleted: safeUserData.totalTests,
@@ -112,71 +62,11 @@ const Profile = () => {
                             />
                         </div>
                         <div className="profile-basic-info">
-                            {isEditing ? (
-                                <div className="edit-form">
-                                    <div className="edit-form-group">
-                                        <label>Your Name</label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={editForm.name}
-                                            onChange={handleInputChange}
-                                            placeholder="Your name"
-                                            className="edit-input"
-                                        />
-                                    </div>
-                                    <div className="edit-form-group">
-                                        <label>Choose Avatar</label>
-                                        <div className="avatar-grid-small">
-                                            {Array.from({ length: 10 }, (_, i) => `avatar_${i + 1}.jpg`).map((avatar) => (
-                                                <button
-                                                    key={avatar}
-                                                    type="button"
-                                                    className={`avatar-option-small ${editForm.avatar === avatar ? 'selected' : ''}`}
-                                                    onClick={() => setEditForm(prev => ({ ...prev, avatar }))}
-                                                    title={avatar}
-                                                >
-                                                    <img
-                                                        src={`/assets/avatar/${avatar}`}
-                                                        alt={avatar}
-                                                    />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <h2>{user.name}</h2>
-                                    <p className="profile-email">{user.email}</p>
-                                    <div className="profile-exam-badge">
-                                        <span>{user.examType?.toUpperCase() || 'JEE'} Aspirant</span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                        <div className="profile-actions">
-                            {isEditing ? (
-                                <div className="edit-actions">
-                                    <button
-                                        className="save-btn"
-                                        onClick={handleSave}
-                                        disabled={isSaving}
-                                    >
-                                        <Save size={16} />
-                                        {isSaving ? 'Saving...' : 'Save'}
-                                    </button>
-                                    <button className="cancel-btn" onClick={handleCancel}>
-                                        <X size={16} />
-                                        Cancel
-                                    </button>
-                                </div>
-                            ) : (
-                                <button className="edit-btn" onClick={handleEditClick}>
-                                    <Edit3 size={16} />
-                                    Edit Profile
-                                </button>
-                            )}
+                            <h2>{user.name}</h2>
+                            <p className="profile-email">{user.email}</p>
+                            <div className="profile-exam-badge">
+                                <span>{user.examType?.toUpperCase() || 'JEE'} Aspirant</span>
+                            </div>
                         </div>
                     </div>
                 </div>

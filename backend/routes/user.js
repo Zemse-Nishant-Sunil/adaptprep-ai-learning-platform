@@ -23,10 +23,7 @@ router.get('/profile', auth, async (req, res) => {
                 createdAt: req.user.createdAt
             },
             userData: {
-                ...userData.toObject(),
-                currentStreak: userData.currentStreak || 0,
-                maxStreak: userData.maxStreak || 0,
-                lastTestDate: userData.lastTestDate
+                ...userData.toObject()
             }
         });
     } catch (error) {
@@ -131,42 +128,6 @@ router.post('/test-results', auth, async (req, res) => {
         // Add test result with all required fields and defaults
         userData.testResults.push(testResultObj);
 
-        // UPDATE STREAK LOGIC
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (!userData.lastTestDate) {
-            // First test ever
-            userData.currentStreak = 1;
-            userData.maxStreak = 1;
-        } else {
-            const lastTest = new Date(userData.lastTestDate);
-            lastTest.setHours(0, 0, 0, 0);
-            
-            const diffTime = today - lastTest;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (diffDays === 0) {
-                // Test taken today already, don't change streak
-            } else if (diffDays === 1) {
-                // Test taken yesterday, increment streak
-                userData.currentStreak += 1;
-                if (userData.currentStreak > userData.maxStreak) {
-                    userData.maxStreak = userData.currentStreak;
-                }
-            } else {
-                // Streak broken, reset to 1
-                userData.currentStreak = 1;
-            }
-        }
-        
-        // Record today's test in streak history
-        userData.lastTestDate = today;
-        userData.streakHistory.push({
-            date: today,
-            status: 'completed'
-        });
-
         // Update statistics
         userData.totalTests = userData.testResults.length;
         const scoreSum = userData.testResults.reduce((acc, test) => acc + (test.accuracy || 0), 0);
@@ -197,9 +158,7 @@ router.post('/test-results', auth, async (req, res) => {
 
         res.json({ 
             message: 'Test results saved successfully', 
-            userData,
-            streak: userData.currentStreak || 0,
-            maxStreak: userData.maxStreak || 0
+            userData
         });
     } catch (error) {
         console.error('❌ Test results save error:', error);
