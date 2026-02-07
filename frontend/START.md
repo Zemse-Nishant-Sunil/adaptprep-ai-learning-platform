@@ -32,7 +32,6 @@
 ## Test Frontend:
 - App: http://localhost:3000
 - Test login/signup
-- Test AI chatbot (🤖 icon in bottom right)
 
 ## Features to Test:
 
@@ -46,11 +45,6 @@
 - Take practice test
 - View results
 
-✅ **AI Chatbot**
-- Click 🤖 icon
-- Ask study questions
-- View chat history
-
 ✅ **Insights**
 - View performance stats
 - See strong/weak subjects
@@ -60,10 +54,6 @@
 **API calls failing?**
 - Check backend is running on port 5000
 - Verify `.env` has correct API URL
-
-**Chat not working?**
-- Check Gemini API key in backend `.env`
-- Ensure user is logged in
 
 **Components not found?**
 - Run `npm run check` to verify all files exist

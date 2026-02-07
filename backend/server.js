@@ -24,13 +24,13 @@ mongoose.connect(process.env.MONGODB_URI, {
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const questionRoutes = require('./routes/questions');
-const chatRoutes = require('./routes/chat'); // Add this line
+const chatRoutes = require('./routes/chat');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/questions', questionRoutes);
-app.use('/api/chat', chatRoutes); // Add this line
+app.use('/api/chat', chatRoutes);
 
 // Test endpoint
 app.get('/api/test', (req, res) => {

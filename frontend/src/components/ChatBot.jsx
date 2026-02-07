@@ -1,321 +1,218 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Send, Trash2, X, MessageCircle, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../contexts/UserContext';
 import './ChatBot.css';
+import { X, Send, Loader, Maximize2, Minimize2, Trash2 } from 'lucide-react';
 
-const ChatBot = () => {
-    const { apiRequest, user, userData } = useUser();
-
-    const [isOpen, setIsOpen] = useState(false);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+const ChatBot = ({ isOpen, onClose }) => {
+    const { user, userData } = useUser();
     const [messages, setMessages] = useState([]);
-    const [inputMessage, setInputMessage] = useState('');
+    const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [sessionId, setSessionId] = useState(null);
+    const [error, setError] = useState('');
+    const [isExpanded, setIsExpanded] = useState(false);
     const messagesEndRef = useRef(null);
+    const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-    const loadChatHistory = useCallback(async () => {
-        try {
-            const response = await apiRequest('/chat/history');
-            if (response.success && response.messages) {
-                setMessages(response.messages);
-            }
-        } catch (error) {
-            console.error('Failed to load chat history:', error);
+    const getToken = () => localStorage.getItem('token');
+
+    // Initialize chat session
+    useEffect(() => {
+        if (isOpen && !sessionId) {
+            initializeSession();
         }
-    }, [apiRequest]);
+    }, [isOpen, sessionId]);
 
-    useEffect(() => {
-        if (isOpen && messages.length === 0) {
-            loadChatHistory();
-        }
-    }, [isOpen, messages.length, loadChatHistory]);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isLoading]);
-
-    const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
-
-    useEffect(() => {
-        const handleEscape = (e) => {
-            if (e.key === 'Escape' && isFullscreen) {
-                setIsFullscreen(false);
-            }
-        };
-        document.addEventListener('keydown', handleEscape);
-        return () => document.removeEventListener('keydown', handleEscape);
-    }, [isFullscreen]);
-
-    const getUserLevel = () => {
-        if (!userData?.testResults?.length) return 'beginner';
-        const avgScore = userData.averageScore || 0;
-        return avgScore >= 80 ? 'advanced' : avgScore >= 60 ? 'intermediate' : 'beginner';
-    };
-
-    const analyzeFailedQuestions = () => {
-        const failedTopics = {};
-        const failedQuestions = [];
-        const subjectAnalysis = {};
-
-        userData?.testResults?.forEach(test => {
-            // Initialize subject analysis
-            if (!subjectAnalysis[test.subject]) {
-                subjectAnalysis[test.subject] = {
-                    total: 0,
-                    failed: 0,
-                    accuracy: 0,
-                    tests: 0
-                };
-            }
-
-            subjectAnalysis[test.subject].total += test.totalQuestions || 0;
-            subjectAnalysis[test.subject].failed += test.incorrectAnswers || 0;
-            subjectAnalysis[test.subject].tests += 1;
-
-            // Track question statuses if available
-            if (test.questionStatuses && test.questionStatuses.length > 0) {
-                test.questionStatuses.forEach((status, idx) => {
-                    if (status === 'incorrect' || status === 'skipped') {
-                        const topic = test.topic || test.subject || 'General';
-                        failedTopics[topic] = (failedTopics[topic] || 0) + 1;
-                        failedQuestions.push({
-                            subject: test.subject,
-                            topic: topic,
-                            testNumber: test.testNumber,
-                            questionIndex: idx + 1,
-                            status: status
-                        });
-                    }
-                });
-            } else {
-                // Fallback: if no question statuses, estimate from correctAnswers
-                const incorrectCount = test.incorrectAnswers || (test.totalQuestions - test.correctAnswers);
-                if (incorrectCount > 0) {
-                    const topic = test.subject || 'General';
-                    failedTopics[topic] = (failedTopics[topic] || 0) + incorrectCount;
-                }
-            }
-        });
-
-        // Calculate accuracy for each subject
-        Object.keys(subjectAnalysis).forEach(subject => {
-            const analysis = subjectAnalysis[subject];
-            if (analysis.total > 0) {
-                analysis.accuracy = Math.round(((analysis.total - analysis.failed) / analysis.total) * 100);
-            }
-        });
-
-        // Get top 3 failed topics
-        const topFailedTopics = Object.entries(failedTopics)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(([topic, count]) => ({ topic, count }));
-
-        const totalTests = userData?.testResults?.length || 0;
-        const totalQuestionsAsked = userData?.testResults?.reduce((sum, test) => sum + (test.totalQuestions || 0), 0) || 0;
-
-        return {
-            topFailedTopics,
-            totalFailed: failedQuestions.length,
-            failureRate: totalTests > 0 ? Math.round((failedQuestions.length / totalQuestionsAsked) * 100) : 0,
-            failedQuestions: failedQuestions, // Added detailed failed questions list
-            subjectAnalysis: subjectAnalysis // Added subject-wise analysis
-        };
-    };
-
-    const sendMessage = async () => {
-        if (!inputMessage.trim() || isLoading) return;
-
-        const userMessage = {
-            role: 'user',
-            content: inputMessage,
-            timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, userMessage]);
-        const currentMessage = inputMessage;
-        setInputMessage('');
-        setIsLoading(true);
-
-        // Analyze failed questions
-        const failureAnalysis = analyzeFailedQuestions();
-
-        // Build subject stats from test results
-        const subjectStats = {};
-        userData?.testResults?.forEach(test => {
-            const subject = test.subject || 'Unknown';
-            if (!subjectStats[subject]) {
-                subjectStats[subject] = {
-                    totalTests: 0,
-                    totalQuestions: 0,
-                    correctAnswers: 0,
-                    incorrectAnswers: 0,
-                    accuracy: 0
-                };
-            }
-            subjectStats[subject].totalTests += 1;
-            subjectStats[subject].totalQuestions += test.totalQuestions || 0;
-            subjectStats[subject].correctAnswers += test.correctAnswers || 0;
-            subjectStats[subject].incorrectAnswers += test.incorrectAnswers || 0;
-        });
-
-        // Calculate accuracies for each subject
-        Object.keys(subjectStats).forEach(subject => {
-            const stats = subjectStats[subject];
-            if (stats.totalQuestions > 0) {
-                stats.accuracy = Math.round((stats.correctAnswers / stats.totalQuestions) * 100);
-            }
-        });
-
-        // Prepare rich context with all user data
-        const contextData = {
-            examType: user?.examType || 'JEE',
-            userName: user?.name || 'Student',
-            userEmail: user?.email || '',
-            userLevel: getUserLevel(),
-            totalTests: userData?.totalTests || 0,
-            averageScore: userData?.averageScore || 0,
-            testResults: userData?.testResults || [],
-            strongSubjects: userData?.strongSubjects || [],
-            weakSubjects: userData?.weakSubjects || [],
-            createdAt: user?.createdAt || '',
-            failureAnalysis: failureAnalysis,
-            recentTestsCount: Math.min(userData?.testResults?.length || 0, 3),
-            subjectStats: subjectStats // Include subject-wise stats
-        };
-
-        console.log('Sending enhanced context to ChatBot:', contextData);
-
+    const initializeSession = async () => {
         try {
-            const response = await apiRequest('/chat/message', {
+            setError('');
+            const token = getToken();
+            const response = await fetch(`${API_BASE}/chat/session`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
-                    message: currentMessage,
-                    context: contextData
+                    examType: user?.examType || 'jee',
+                    subject: 'General',
+                    topic: 'Student Tutoring'
                 })
             });
 
-            const aiMessage = {
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create session');
+            }
+
+            const data = await response.json();
+            setSessionId(data.sessionId);
+            setMessages(data.messages || []);
+
+            // Add initial greeting
+            if (!data.messages || data.messages.length === 0) {
+                const greetingMessage = `Hello ${user?.name}! 👋\n\nI'm your AI tutor here to help you with your ${user?.examType?.toUpperCase()} exam preparation. I have access to your performance data and can help you:\n\n✓ Understand difficult concepts\n✓ Solve problems step-by-step\n✓ Analyze your performance\n✓ Learn from your mistakes\n✓ Suggest topics to focus on\n✓ Keep you motivated on your learning journey\n\nWhat would you like to learn today?`;
+                setMessages([{
+                    role: 'assistant',
+                    content: greetingMessage
+                }]);
+            }
+        } catch (err) {
+            console.error('Error initializing chat:', err);
+            setError(err.message || 'Failed to initialize chat');
+        }
+    };
+
+    // Auto-scroll to latest message
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+
+        if (!inputValue.trim() || !sessionId) {
+            return;
+        }
+
+        const userMessage = inputValue.trim();
+        setInputValue('');
+
+        // Add user message to UI immediately
+        const newMessages = [...messages, {
+            role: 'user',
+            content: userMessage
+        }];
+        setMessages(newMessages);
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const token = getToken();
+            const response = await fetch(`${API_BASE}/chat/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    sessionId,
+                    message: userMessage
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to send message');
+            }
+
+            const data = await response.json();
+            setMessages([...newMessages, {
                 role: 'assistant',
-                content: response.message || response.response || 'I am having trouble connecting to my brain right now.',
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMessage]);
-        } catch (error) {
-            console.error('AI API Error:', error);
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: "⚠️ Connection error. Please check if the Backend server is running and your Gemini API key is valid.",
-                timestamp: new Date()
+                content: data.message
             }]);
+        } catch (err) {
+            console.error('Error sending message:', err);
+            setError(err.message || 'Failed to send message. Please try again.');
+            // Remove the user message if there was an error
+            setMessages(newMessages.slice(0, -1));
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!user) return null;
+    const handleClearChat = () => {
+        if (window.confirm('Are you sure you want to clear this conversation?')) {
+            setMessages([{
+                role: 'assistant',
+                content: `Hi ${user?.name}! 👋 Your chat has been cleared. What would you like to learn today?`
+            }]);
+            setError('');
+        }
+    };
+
+    const toggleExpand = () => {
+        setIsExpanded(!isExpanded);
+    };
+
+    if (!isOpen) {
+        return null;
+    }
 
     return (
-        <div className={`chatbot-container ${isOpen ? 'active' : ''}`}>
-            {/* Toggle Button - ALWAYS RENDERS */}
-            <button
-                className={`chatbot-toggle-btn ${isOpen ? 'hidden' : 'visible'}`}
-                onClick={() => setIsOpen(true)}
-                title="Open AI Study Coach"
-                aria-label="Open AI Study Coach"
-            >
-                <div className="toggle-icon-wrapper">
-                    <MessageCircle size={28} className="toggle-icon" />
-                    <Zap size={16} className="toggle-spark" />
+        <div className={`chatbot-container ${isExpanded ? 'expanded' : ''}`}>
+            <div className="chatbot-header">
+                <div className="header-content">
+                    <div className="header-title">
+                        <span className="header-icon">🤖</span>
+                        <h2>AI Tutor</h2>
+                    </div>
+
                 </div>
-                <span className="toggle-text">AI Coach</span>
-            </button>
+                <div className="header-actions">
+                    <button
+                        className="icon-btn expand-btn"
+                        onClick={toggleExpand}
+                        title={isExpanded ? "Minimize" : "Maximize"}
+                    >
+                        {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
+                    <button
+                        className="icon-btn clear-btn"
+                        onClick={handleClearChat}
+                        title="Clear chat"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                    <button className="icon-btn close-btn" onClick={onClose}>
+                        <X size={20} />
+                    </button>
+                </div>
+            </div>
 
-            {/* Chat Window - Only visible when open */}
-            {isOpen && (
-                <div className={`chatbot-window ${isFullscreen ? 'fullscreen' : ''}`}>
-                    <div className="chatbot-header">
-                        <div className="header-info">
-                            <span className="bot-icon">🤖</span>
-                            <div>
-                                <h3>AI Study Coach</h3>
-                                <small>{isLoading ? 'Thinking...' : 'Online'}</small>
-                            </div>
+            <div className="chatbot-messages">
+                {messages.map((msg, index) => (
+                    <div key={index} className={`message ${msg.role}`}>
+                        <div className="message-avatar">
+                            {msg.role === 'user' ? '👤' : '🤖'}
                         </div>
-                        <div className="chatbot-controls">
-                            <button
-                                onClick={toggleFullscreen}
-                                className="control-btn"
-                                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                            >
-                                {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                            </button>
-                            <button
-                                onClick={() => setMessages([])}
-                                className="control-btn"
-                                title="Clear Chat"
-                            >
-                                <Trash2 size={18} />
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setIsFullscreen(false);
-                                }}
-                                className="control-btn close"
-                                title="Close Chat"
-                            >
-                                <X size={20} />
-                            </button>
+                        <div className="message-content">
+                            {msg.content}
                         </div>
                     </div>
-
-                    <div className="chatbot-messages">
-                        {messages.length === 0 && (
-                            <div className="welcome-card">
-                                <h4>Welcome, {user?.name || 'Scholar'}! 👋</h4>
-                                <p>I'm synced with your <b>{user?.examType || 'JEE'}</b> progress. How can I help today?</p>
-                            </div>
-                        )}
-
-                        {messages.map((msg, i) => (
-                            <div key={i} className={`message-wrapper ${msg.role}`}>
-                                <div className="message-bubble">
-                                    {msg.content}
-                                </div>
-                                <span className="timestamp">
-                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
-                        ))}
-                        {isLoading && <div className="typing-indicator"><span></span><span></span><span></span></div>}
-                        <div ref={messagesEndRef} />
+                ))}
+                {isLoading && (
+                    <div className="message assistant loading">
+                        <div className="message-avatar">🤖</div>
+                        <div className="message-content">
+                            <Loader size={18} className="spinner" />
+                            <span>Thinking...</span>
+                        </div>
                     </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
 
-                    <div className="chatbot-input-area">
-                        <input
-                            type="text"
-                            value={inputMessage}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                            placeholder="Type your study question..."
-                            disabled={isLoading}
-                        />
-                        <button
-                            onClick={sendMessage}
-                            disabled={!inputMessage.trim() || isLoading}
-                            title="Send Message"
-                        >
-                            <Send size={18} />
-                        </button>
-                    </div>
+            {error && (
+                <div className="error-message">
+                    <span>⚠️</span>
+                    {error}
                 </div>
             )}
 
-            {/* Fullscreen Overlay */}
-            {isFullscreen && (
-                <div className="fullscreen-overlay" onClick={() => setIsFullscreen(false)}></div>
-            )}
+            <form className="chatbot-input" onSubmit={handleSendMessage}>
+                <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="Ask me anything about your studies..."
+                    disabled={isLoading}
+                />
+                <button type="submit" disabled={isLoading || !inputValue.trim()} className="send-btn">
+                    <Send size={18} />
+                </button>
+            </form>
         </div>
     );
 };

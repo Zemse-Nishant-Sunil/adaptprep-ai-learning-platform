@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider, useUser } from './contexts/UserContext';
 import Login from './pages/Login';
@@ -6,14 +6,16 @@ import SignUp from './pages/SignUp';
 import Dashboard from './components/Dashboard';
 import MockTest from './components/MockTest';
 import Insights from './components/Insights';
-import ChatBot from './components/ChatBot';
 import Navbar from './components/Navbar';
 import Performance from './components/Performance';
 import Profile from './components/Profile';
+import ChatBot from './components/ChatBot';
+import ChatIcon from './components/ChatIcon';
 
 // Create a wrapper component to handle authentication logic
 const AppContent = () => {
     const { user, loading } = useUser();
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     if (loading) {
         return (
@@ -71,7 +73,14 @@ const AppContent = () => {
                     element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
                 />
             </Routes>
-            {user && <ChatBot />}
+
+            {/* Chat features - only show for authenticated users */}
+            {user && (
+                <>
+                    <ChatIcon onClick={() => setIsChatOpen(true)} />
+                    <ChatBot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+                </>
+            )}
         </div>
     );
 };

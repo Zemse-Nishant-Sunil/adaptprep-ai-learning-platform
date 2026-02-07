@@ -6,9 +6,7 @@ A complete Node.js + Express + MongoDB backend for the AdaptPrep exam preparatio
 
 - 🔐 JWT Authentication with bcrypt
 - 📊 User progress tracking
-- 🤖 AI Study Coach (Google Gemini)
 - 📚 Question Bank API (JEE/NEET)
-- 💬 Persistent Chat History
 - 🔒 Rate Limiting & Security
 
 ## Quick Start
@@ -57,11 +55,6 @@ A complete Node.js + Express + MongoDB backend for the AdaptPrep exam preparatio
 - `GET /api/questions/:examType/:subject` - Get questions
 - `GET /api/questions` - Get exam structure
 
-### AI Chat
-- `POST /api/chat/message` - Send message to AI
-- `GET /api/chat/history` - Get chat history
-- `DELETE /api/chat/history` - Clear chat history
-
 ## Getting Google Gemini API Key
 
 1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -73,7 +66,6 @@ A complete Node.js + Express + MongoDB backend for the AdaptPrep exam preparatio
 
 - **User**: Authentication data
 - **UserData**: Test results and progress
-- **ChatHistory**: AI conversation history
 
 ## Security Features
 

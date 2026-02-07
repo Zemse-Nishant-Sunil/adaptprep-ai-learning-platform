@@ -27,18 +27,6 @@ const testResultSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 
-const chatMessageSchema = new mongoose.Schema({
-    role: { type: String, enum: ['user', 'assistant'] },
-    content: String,
-    timestamp: { type: Date, default: Date.now },
-    context: {
-        testNumber: Number,
-        subject: String,
-        questionNumber: Number,
-        relatedTopic: String
-    }
-}, { _id: false });
-
 const userDataSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -58,7 +46,6 @@ const userDataSchema = new mongoose.Schema({
         date: { type: Date },
         status: { type: String, enum: ['completed', 'missed'] }
     }],
-    chatHistory: [chatMessageSchema], // New: Store chat conversations
     lastUpdated: { type: Date, default: Date.now }
 });
 
