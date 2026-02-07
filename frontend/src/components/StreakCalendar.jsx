@@ -13,13 +13,21 @@ const StreakCalendar = ({ testResults = [] }) => {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // Create a map of test dates for quick lookup
+    // Helper function to format date in local timezone (YYYY-MM-DD)
+    const getLocalDateKey = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Create a map of test dates for quick lookup (using local timezone)
     const testDateMap = useMemo(() => {
         const map = {};
         if (testResults) {
             testResults.forEach(test => {
                 const testDate = new Date(test.date);
-                const dateKey = testDate.toISOString().split('T')[0];
+                const dateKey = getLocalDateKey(testDate);
                 map[dateKey] = true;
             });
         }
@@ -29,7 +37,7 @@ const StreakCalendar = ({ testResults = [] }) => {
     // Function to check if date has a test
     const hasTestOnDate = (day) => {
         const date = new Date(year, month, day);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(date);
         return testDateMap[dateKey] || false;
     };
 

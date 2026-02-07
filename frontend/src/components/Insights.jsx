@@ -318,7 +318,10 @@ const Insights = () => {
                     <h2>Subject-wise Performance</h2>
                     <div className="subject-grid">
                         {Object.entries(stats.subjectStats).map(([subject, subjectData]) => {
-                            const accuracy = subjectData.total > 0 ? (subjectData.correct / subjectData.total) * 100 : 0;
+                            // Ensure we have valid data before calculating
+                            const totalQs = subjectData.total || 0;
+                            const correct = subjectData.correctAnswers || 0;
+                            const accuracy = totalQs > 0 ? (correct / totalQs) * 100 : 0;
                             const trend = accuracy >= 70 ? 'up' : accuracy >= 50 ? 'stable' : 'down';
 
                             return (
@@ -326,21 +329,21 @@ const Insights = () => {
                                     <div className="subject-header">
                                         <h3>{subject}</h3>
                                         <span className={`trend-badge trend-${trend}`}>
-                                            {accuracy.toFixed(1)}%
+                                            {isNaN(accuracy) ? '0.0' : accuracy.toFixed(1)}%
                                         </span>
                                     </div>
                                     <div className="subject-stats">
                                         <div className="accuracy-display">
-                                            <span className="accuracy-value">{accuracy.toFixed(0)}%</span>
+                                            <span className="accuracy-value">{isNaN(accuracy) ? '0' : Math.round(accuracy)}%</span>
                                             <span className="accuracy-label">Accuracy</span>
                                         </div>
                                         <div className="accuracy-bar">
                                             <div
                                                 className="bar-fill"
-                                                style={{ width: `${Math.min(accuracy, 100)}%` }}
+                                                style={{ width: `${Math.min(isNaN(accuracy) ? 0 : accuracy, 100)}%` }}
                                             ></div>
                                         </div>
-                                        <small>{subjectData.tests} tests • {subjectData.correct}/{subjectData.total} correct</small>
+                                        <small>{subjectData.tests} tests • {correct}/{totalQs} correct</small>
                                     </div>
                                 </div>
                             );

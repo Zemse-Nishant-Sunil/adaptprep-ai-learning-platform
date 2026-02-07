@@ -52,6 +52,77 @@ const ChatBot = () => {
         return avgScore >= 80 ? 'advanced' : avgScore >= 60 ? 'intermediate' : 'beginner';
     };
 
+    const analyzeFailedQuestions = () => {
+        const failedTopics = {};
+        const failedQuestions = [];
+        const subjectAnalysis = {};
+
+        userData?.testResults?.forEach(test => {
+            // Initialize subject analysis
+            if (!subjectAnalysis[test.subject]) {
+                subjectAnalysis[test.subject] = {
+                    total: 0,
+                    failed: 0,
+                    accuracy: 0,
+                    tests: 0
+                };
+            }
+
+            subjectAnalysis[test.subject].total += test.totalQuestions || 0;
+            subjectAnalysis[test.subject].failed += test.incorrectAnswers || 0;
+            subjectAnalysis[test.subject].tests += 1;
+
+            // Track question statuses if available
+            if (test.questionStatuses && test.questionStatuses.length > 0) {
+                test.questionStatuses.forEach((status, idx) => {
+                    if (status === 'incorrect' || status === 'skipped') {
+                        const topic = test.topic || test.subject || 'General';
+                        failedTopics[topic] = (failedTopics[topic] || 0) + 1;
+                        failedQuestions.push({
+                            subject: test.subject,
+                            topic: topic,
+                            testNumber: test.testNumber,
+                            questionIndex: idx + 1,
+                            status: status
+                        });
+                    }
+                });
+            } else {
+                // Fallback: if no question statuses, estimate from correctAnswers
+                const incorrectCount = test.incorrectAnswers || (test.totalQuestions - test.correctAnswers);
+                if (incorrectCount > 0) {
+                    const topic = test.subject || 'General';
+                    failedTopics[topic] = (failedTopics[topic] || 0) + incorrectCount;
+                }
+            }
+        });
+
+        // Calculate accuracy for each subject
+        Object.keys(subjectAnalysis).forEach(subject => {
+            const analysis = subjectAnalysis[subject];
+            if (analysis.total > 0) {
+                analysis.accuracy = Math.round(((analysis.total - analysis.failed) / analysis.total) * 100);
+            }
+        });
+
+        // Get top 3 failed topics
+        const topFailedTopics = Object.entries(failedTopics)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([topic, count]) => ({ topic, count }));
+
+        const totalTests = userData?.testResults?.length || 0;
+        const totalQuestionsAsked = userData?.testResults?.reduce((sum, test) => sum + (test.totalQuestions || 0), 0) || 0;
+
+        return {
+            topFailedTopics,
+            totalFailed: failedQuestions.length,
+            failureRate: totalTests > 0 ? Math.round((failedQuestions.length / totalQuestionsAsked) * 100) : 0,
+            failedQuestions: failedQuestions, // Added detailed failed questions list
+            subjectAnalysis: subjectAnalysis // Added subject-wise analysis
+        };
+    };
+
     const sendMessage = async () => {
         if (!inputMessage.trim() || isLoading) return;
 
@@ -66,7 +137,37 @@ const ChatBot = () => {
         setInputMessage('');
         setIsLoading(true);
 
-        // Prepare context with all user data
+        // Analyze failed questions
+        const failureAnalysis = analyzeFailedQuestions();
+
+        // Build subject stats from test results
+        const subjectStats = {};
+        userData?.testResults?.forEach(test => {
+            const subject = test.subject || 'Unknown';
+            if (!subjectStats[subject]) {
+                subjectStats[subject] = {
+                    totalTests: 0,
+                    totalQuestions: 0,
+                    correctAnswers: 0,
+                    incorrectAnswers: 0,
+                    accuracy: 0
+                };
+            }
+            subjectStats[subject].totalTests += 1;
+            subjectStats[subject].totalQuestions += test.totalQuestions || 0;
+            subjectStats[subject].correctAnswers += test.correctAnswers || 0;
+            subjectStats[subject].incorrectAnswers += test.incorrectAnswers || 0;
+        });
+
+        // Calculate accuracies for each subject
+        Object.keys(subjectStats).forEach(subject => {
+            const stats = subjectStats[subject];
+            if (stats.totalQuestions > 0) {
+                stats.accuracy = Math.round((stats.correctAnswers / stats.totalQuestions) * 100);
+            }
+        });
+
+        // Prepare rich context with all user data
         const contextData = {
             examType: user?.examType || 'JEE',
             userName: user?.name || 'Student',
@@ -77,10 +178,13 @@ const ChatBot = () => {
             testResults: userData?.testResults || [],
             strongSubjects: userData?.strongSubjects || [],
             weakSubjects: userData?.weakSubjects || [],
-            createdAt: user?.createdAt || ''
+            createdAt: user?.createdAt || '',
+            failureAnalysis: failureAnalysis,
+            recentTestsCount: Math.min(userData?.testResults?.length || 0, 3),
+            subjectStats: subjectStats // Include subject-wise stats
         };
 
-        console.log('Sending context to ChatBot:', contextData);
+        console.log('Sending enhanced context to ChatBot:', contextData);
 
         try {
             const response = await apiRequest('/chat/message', {

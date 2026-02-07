@@ -1,5 +1,16 @@
 const mongoose = require('mongoose');
 
+const questionDetailSchema = new mongoose.Schema({
+    questionNumber: Number,
+    topic: String,
+    question: String,
+    options: [String],
+    correctAnswer: String,
+    userAnswer: String,
+    status: { type: String, enum: ['correct', 'incorrect', 'skipped'] },
+    explanation: String
+}, { _id: false });
+
 const testResultSchema = new mongoose.Schema({
     examType: String,
     subject: String,
@@ -12,8 +23,21 @@ const testResultSchema = new mongoose.Schema({
     timeTaken: Number,
     accuracy: Number,
     questionStatuses: [String],
+    questionDetails: [questionDetailSchema], // New: Store actual question data
     date: { type: Date, default: Date.now }
 });
+
+const chatMessageSchema = new mongoose.Schema({
+    role: { type: String, enum: ['user', 'assistant'] },
+    content: String,
+    timestamp: { type: Date, default: Date.now },
+    context: {
+        testNumber: Number,
+        subject: String,
+        questionNumber: Number,
+        relatedTopic: String
+    }
+}, { _id: false });
 
 const userDataSchema = new mongoose.Schema({
     userId: {
@@ -34,6 +58,7 @@ const userDataSchema = new mongoose.Schema({
         date: { type: Date },
         status: { type: String, enum: ['completed', 'missed'] }
     }],
+    chatHistory: [chatMessageSchema], // New: Store chat conversations
     lastUpdated: { type: Date, default: Date.now }
 });
 

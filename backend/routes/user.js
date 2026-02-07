@@ -86,7 +86,7 @@ router.put('/profile', auth, async (req, res) => {
 // Save test results
 router.post('/test-results', auth, async (req, res) => {
     try {
-        let { examType, subject, testNumber, rawScore, correctAnswers, incorrectAnswers, skipped, totalQuestions, timeTaken, questionStatuses } = req.body;
+        let { examType, subject, testNumber, rawScore, correctAnswers, incorrectAnswers, skipped, totalQuestions, timeTaken, questionStatuses, questionDetails } = req.body;
 
         // Validate and set defaults for required fields
         totalQuestions = parseInt(totalQuestions) || 0;
@@ -112,8 +112,8 @@ router.post('/test-results', auth, async (req, res) => {
         // Calculate accuracy safely
         const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
 
-        // Add test result with all required fields and defaults
-        userData.testResults.push({
+        // Build test result object with all fields including questionDetails
+        const testResultObj = {
             examType,
             subject,
             testNumber,
@@ -124,8 +124,12 @@ router.post('/test-results', auth, async (req, res) => {
             totalQuestions,
             timeTaken,
             accuracy: accuracy || 0,
-            questionStatuses: questionStatuses || []
-        });
+            questionStatuses: questionStatuses || [],
+            questionDetails: questionDetails || [] // IMPORTANT: Save actual question data
+        };
+
+        // Add test result with all required fields and defaults
+        userData.testResults.push(testResultObj);
 
         // UPDATE STREAK LOGIC
         const today = new Date();

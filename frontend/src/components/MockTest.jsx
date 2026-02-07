@@ -130,6 +130,20 @@ const MockTest = () => {
         // Extract question statuses in order for accurate tracking
         const questionStatuses = detailedResults.map(result => result.status);
 
+        // Convert detailed results to question details format for backend
+        const questionDetails = detailedResults.map((result, idx) => ({
+            questionNumber: idx + 1,
+            topic: result.topic || 'General',
+            question: result.question,
+            options: result.options || [],
+            correctAnswer: result.correct,
+            userAnswer: result.userAnswer,
+            status: result.status,
+            explanation: result.explanation || '',
+            difficulty: result.difficulty || 'medium',
+            theory: result.theory || ''
+        }));
+
         // Save result to backend with JEE/NEET format
         const testResult = {
             examType: selectedExam,
@@ -141,7 +155,8 @@ const MockTest = () => {
             skipped: skippedAnswers,
             totalQuestions: questions.length,
             timeTaken: timeTaken,
-            questionStatuses: questionStatuses
+            questionStatuses: questionStatuses,
+            questionDetails: questionDetails // Include actual question data
         };
 
         await saveTestResult(testResult);
