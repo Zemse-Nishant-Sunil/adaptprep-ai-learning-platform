@@ -1,5 +1,7 @@
 # AdaptPrep - AI-Powered Exam Preparation Platform
 
+👉 See MY_CONTRIBUTION.md for my role in this project
+
 A comprehensive full-stack web application designed to help students prepare for competitive exams (JEE/NEET) with AI-powered personalized coaching and comprehensive performance analytics.
 
 ## 🌟 Key Features
